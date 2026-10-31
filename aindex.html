@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -55,6 +54,11 @@
 
     <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="fixed inset-0 bg-slate-950 z-[200] flex flex-col items-center justify-center p-4">
+        <!-- Önbellek Temizleme Butonu -->
+        <button onclick="clearCacheAndReload()" class="absolute top-4 right-4 bg-slate-800 text-white text-[10px] px-3 py-2 rounded-lg border border-slate-600 hover:bg-slate-700 shadow flex items-center gap-1 active:scale-95">
+            <span class="text-sm">🔄</span> Sürümü Güncelle
+        </button>
+
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center tracking-tighter">ŞAP SALGINI: OPERASYON</h1>
         <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-8 overflow-y-auto max-h-[60vh]">
             <p><strong class="text-white">GÖREV:</strong> Ülke çapında yayılan mutasyonları durdur!</p>
@@ -62,7 +66,7 @@
                 <li><strong class="text-red-400">MİHRAK VE TEDBİR:</strong> Hastalık çıkan il <strong class="text-red-500">Kırmızı (Mihrak)</strong> kordona alınır. Komşuları <strong class="text-yellow-500">Sarı (Tedbir)</strong> kordona girer.</li>
                 <li><strong class="text-yellow-400">GELİŞMİŞ FİLYASYON KURALI:</strong> Kırmızı mihrak temizlendiğinde; Sarı kordondaki komşu il <strong class="text-blue-400">AŞILIYSA</strong> karantinası kalkar. <strong class="text-red-400">AŞISIZSA</strong> şüpheli olarak karantinada kalmaya devam eder! Orayı bizzat aşılamak zorundasınız.</li>
                 <li><strong class="text-orange-400">BÜTÇE VE ZAYİAT:</strong> Kırmızı kordon saniyede -₺20, Sarı kordon -₺10 yer. Enstitüde her suş için 10 dozluk güvenli stok vardır, fazlası kullanılmazsa bozulur.</li>
-                <li><strong class="text-purple-400">AR-GE / MARKET:</strong> Sağ üstten yeni ekipler (fiyatı katlanarak artar) ve Otonom Sistemler alabilirsiniz. Otomasyonlar oyunu "Felaket" seviyesine taşır!</li>
+                <li><strong class="text-purple-400">AR-GE / MARKET:</strong> Sağ üstten yeni ekipler (fiyatı katlanarak artar) ve Otonom Sistemler alabilirsiniz.</li>
                 <li><strong class="text-red-500">İFLAS DURUMU:</strong> Bütçe <strong class="text-red-600">-₺5000</strong>'ye düşerse iflas edersiniz!</li>
             </ul>
         </div>
@@ -140,6 +144,7 @@
             <button id="tutorial-btn" onclick="nextTutorialStep()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-6 rounded-lg text-xs shadow-lg active:scale-95 transition hidden mx-auto">DEVAM ET</button>
         </div>
 
+        <!-- Alt Menü (Araçlar) -->
         <div class="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 w-[98%] max-w-xl pb-2">
             <div class="text-[10px] sm:text-xs text-blue-200 font-bold mb-1 ml-2 drop-shadow-md">
                 🚐 Saha Ekipleri: <span id="ui-teams" class="text-white">1</span> / <span id="ui-max-teams">1</span> (Uygulama: 2sn)
@@ -192,7 +197,7 @@
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-blue-400 text-sm">Otonom Üretim (Y.Z.)</h3>
-                        <p class="text-[10px] text-slate-400">Seçili aşı stoğu 3'un altına düşerse otomatik üretir.</p>
+                        <p class="text-[10px] text-slate-400">Seçili aşı stoğu 3'ün altına düşerse otomatik üretir.</p>
                     </div>
                     <button id="btn-buy-auto-prod" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
                         ₺5000
@@ -220,6 +225,20 @@
     </div>
 
     <script>
+        // Önbelleği temizleme ve sayfayı yeniden yükleme fonksiyonu
+        function clearCacheAndReload() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                    window.location.reload(true);
+                });
+            } else {
+                window.location.reload(true);
+            }
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d', { alpha: false }); 
 
@@ -251,7 +270,7 @@
         };
 
         let lastTime = 0, dayTimer = 0, economyTimer = 0, truckSpawnTimer = 0, quarantineRot = 0;
-        let outbreakTimer = 5.0, spoilageTimer = 30.0;
+        let outbreakTimer = 15.0, spoilageTimer = 30.0; // İlk çıkış süresi uzatıldı
 
         const MAP_DATA = [
             { id: 'edirne', name: 'Edirne', px: 0.08, py: 0.22 },
@@ -322,7 +341,9 @@
 
         function resizeCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            const topPad = 170; const botPad = 130; 
+            // Harita konumlandırmasını ekranın ortasına almak için üst boşluk (padding) azaltıldı
+            const topPad = 140; 
+            const botPad = 160; 
             const w = canvas.width, h = canvas.height - (topPad + botPad); 
             state.nodes.forEach(n => { n.x = 30 + n.px * (w - 60); n.y = topPad + n.py * h; n.radius = w < 500 ? 12 : 16; });
         }
@@ -394,15 +415,12 @@
         }
 
         btnStart.addEventListener('click', () => {
-            // Önce arayüz geçişlerini yap (Hata olursa oyun donmasın diye)
             startScreen.classList.add('hidden'); uiLayer.classList.remove('hidden');
             gameStarted = true; lastTime = performance.now();
             
             tutorialMode = true; tutorialStep = 1;
             infectNode(state.nodes.find(n => n.id === 'ankara'), 'Tip-O');
             updateTutorialUI();
-
-            // En son tam ekran isteği gönderilir
             requestFullscreenSafe();
         });
 
@@ -416,7 +434,6 @@
         window.produce = function(strain, isAuto = false) {
             if (!gameStarted || state.isGameOver) return;
             
-            // Öğretici 2. adım koruması
             if (tutorialMode && tutorialStep === 2 && strain !== 'Tip-O') {
                 addFloatingText("Öğreticide sadece Tip-O üretin!", canvas.width/2, 120, '#ef4444');
                 return;
@@ -463,14 +480,20 @@
             }
         };
 
+        // Ghost click ve algılama gecikmelerini önleyen mobil dokunma (Touch) desteği
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            handleInteraction(e);
+        }, {passive: false});
         canvas.addEventListener('mousedown', handleInteraction);
-        canvas.addEventListener('touchstart', handleInteraction, {passive: false});
 
         function handleInteraction(e) {
             if(!gameStarted || state.isGameOver) return;
             if(e.target.closest('#ui-layer') || e.target.closest('.modal')) return;
             let cx = e.clientX || (e.touches && e.touches[0].clientX), cy = e.clientY || (e.touches && e.touches[0].clientY);
-            let clickedNode = state.nodes.find(n => Math.hypot(cx - n.x, cy - n.y) <= n.radius + 15);
+            
+            // Tıklama hassasiyeti (radius + 20) artırıldı.
+            let clickedNode = state.nodes.find(n => Math.hypot(cx - n.x, cy - n.y) <= n.radius + 20);
             if (clickedNode) applyVaccine(clickedNode, cx, cy);
         }
 
@@ -544,7 +567,7 @@
             if(!gameStarted || state.isGameOver) return;
             quarantineRot += dt;
             
-            // Eğer öğretici modunda değilsek zaman, bütçe ve rastgele krizler işler
+            // Eğer öğretici modunda değilsek zaman, bütçe ve dinamik krizler işler
             if (!tutorialMode) {
                 dayTimer += dt;
                 if (dayTimer >= 2.0) { state.day++; dayTimer = 0; updateUI(); }
@@ -600,11 +623,19 @@
                     let vuln = state.nodes.filter(n => n.qState === 0 && n.infectedStrains.length === 0);
                     if(vuln.length > 0) {
                         let randNode = vuln[Math.floor(Math.random() * vuln.length)];
-                        let maxIdx = Math.min(STRAIN_ORDER.length - 1, Math.floor(state.day / 15)); 
+                        // Yeni suşların oyuna girmesi biraz daha yavaşlatıldı (her 20 günde 1 yeni suş)
+                        let maxIdx = Math.min(STRAIN_ORDER.length - 1, Math.floor(state.day / 20)); 
                         let randStrain = STRAIN_ORDER[Math.floor(Math.random() * (maxIdx + 1))];
                         infectNode(randNode, randStrain);
                     }
-                    outbreakTimer = 5.0 + Math.random() * 3.0; 
+                    
+                    // --- DİNAMİK ZORLUK (Kademeli Sistem) ---
+                    let base = 15.0, variance = 5.0; // 1-39. Gün: 15-20 saniye
+                    if (state.day >= 200) { base = 4.0; variance = 2.0; } // 200+ Gün: 4-6 saniye
+                    else if (state.day >= 100) { base = 5.0; variance = 3.0; } // 100-199 Gün: 5-8 saniye
+                    else if (state.day >= 40) { base = 10.0; variance = 5.0; } // 40-99 Gün: 10-15 saniye
+                    
+                    outbreakTimer = base + Math.random() * variance; 
                 }
                 
                 truckSpawnTimer += dt;
@@ -743,20 +774,14 @@
             state.trucks.forEach(t => {
                 let fromNode = state.nodes.find(n => n.id === t.fromId), toNode = state.nodes.find(n => n.id === t.toId);
                 let x = fromNode.x + (toNode.x - fromNode.x) * t.progress, y = fromNode.y + (toNode.y - fromNode.y) * t.progress;
-                
                 ctx.beginPath(); 
                 if (t.strain) {
-                    ctx.arc(x, y, 4, 0, Math.PI * 2); 
-                    ctx.fillStyle = STRAINS[t.strain].color;
-                    ctx.shadowColor = STRAINS[t.strain].color;
-                    ctx.shadowBlur = 6; 
+                    ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fillStyle = STRAINS[t.strain].color;
+                    ctx.shadowColor = STRAINS[t.strain].color; ctx.shadowBlur = 6; 
                 } else {
-                    ctx.arc(x, y, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = '#64748b'; 
-                    ctx.shadowBlur = 0;
+                    ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = '#64748b'; ctx.shadowBlur = 0;
                 }
-                ctx.fill();
-                ctx.shadowBlur = 0; 
+                ctx.fill(); ctx.shadowBlur = 0; 
             });
 
             state.nodes.forEach(n => {
@@ -766,15 +791,14 @@
                     activeImmunities.forEach(s => {
                         ctx.beginPath(); ctx.arc(n.x, n.y, n.radius + 5, cAngle, cAngle + aStep);
                         ctx.strokeStyle = STRAINS[s].color; ctx.lineWidth = 3;
-                        ctx.globalAlpha = Math.min(1.0, n.immunity[s]/10);
-                        ctx.stroke(); cAngle += aStep;
+                        ctx.globalAlpha = Math.min(1.0, n.immunity[s]/10); ctx.stroke(); cAngle += aStep;
                     });
                     ctx.globalAlpha = 1.0;
                 }
 
                 ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-                ctx.fillStyle = n.infectedStrains.length === 0 ? '#10b981' : '#1e293b';
-                ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#334155'; ctx.stroke();
+                ctx.fillStyle = n.infectedStrains.length === 0 ? '#10b981' : '#1e293b'; ctx.fill(); 
+                ctx.lineWidth = 2; ctx.strokeStyle = '#334155'; ctx.stroke();
 
                 if (n.infectedStrains.length > 0) {
                     let angleStep = (Math.PI * 2) / n.infectedStrains.length, currentAngle = 0;
@@ -788,8 +812,7 @@
                     ctx.save(); ctx.translate(n.x, n.y); ctx.rotate(quarantineRot);
                     ctx.beginPath(); ctx.arc(0, 0, n.radius + 9, 0, Math.PI * 2);
                     ctx.strokeStyle = n.qState === 2 ? '#ef4444' : '#eab308';
-                    ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke();
-                    ctx.restore();
+                    ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.restore();
                 }
 
                 if (n.qState === 1 && n.threatStrains.size > 0) {
@@ -797,8 +820,7 @@
                     Array.from(n.threatStrains).forEach((strain, idx) => {
                         ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
                         ctx.fillStyle = STRAINS[strain].color; ctx.shadowColor = 'black'; ctx.shadowBlur = 3;
-                        ctx.fillText(`Tehdit: ${strain}`, n.x, threatY - (idx * 12));
-                        ctx.shadowBlur = 0;
+                        ctx.fillText(`Tehdit: ${strain}`, n.x, threatY - (idx * 12)); ctx.shadowBlur = 0;
                     });
                 }
 
@@ -832,20 +854,10 @@
         };
 
         if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', (e) => { self.skipWaiting(); });
-                self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Network error'))); });
-            `;
+            const swCode = `self.addEventListener('install', (e) => { self.skipWaiting(); }); self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); }); self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Network error'))); });`;
             const blob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).then(reg => {
-                console.log('PWA Service Worker registered.');
-            }).catch(err => {
-                console.log('PWA Registration failed:', err);
-            });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
         }
     </script>
 </body>
 </html>
-```
