@@ -287,19 +287,30 @@
 
         // --- ANA FONKSİYONLAR ---
         function startGame() {
-            requestFullScreen();
+            // 1. Önce ekranları değiştir (Tam ekran hatası verse bile UI takılmasın)
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('uiLayer').classList.remove('hidden');
             document.getElementById('uiLayer').classList.add('flex');
             isPlaying = true;
             
-            // Öğretici Başlangıç Enfeksiyonu
+            // 2. Öğretici başlat
             const ankara = nodes.find(n => n.id === 5);
-            infectNode(ankara, 'O');
+            if(ankara) infectNode(ankara, 'O');
             updateTutorialUI();
             
             gameLoop();
-        }
+            
+            // 3. Tam ekranı en son ve korumalı şekilde dene
+            try {
+                let docElm = document.documentElement;
+                if (docElm.requestFullscreen) docElm.requestFullscreen().catch(e => console.log("Tam ekran desteklenmiyor"));
+                else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
+                else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
+                else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
+            } catch(e) {
+                console.log("Tam ekran hatası yoksayıldı.");
+            }
+                }
 
         function toggleMarket(forceClose = false) {
             const m = document.getElementById('marketModal');
