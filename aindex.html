@@ -1,648 +1,851 @@
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Şap Salgını: Operasyon</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030712">
+    
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoixZ5hcCBTYWxnxLFuxLE6IE9wZXJhc3lvbiIsInNob3J0X25hbWUiOiLFnmFwIE9wZXJhc3lvbiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwic3RhcnRfdXJsIjoiLiIsImJhY2tncm91bmRfY29sb3IiOiIjMDMwNzEyIiwidGhlbWVfY29sb3IiOiIjMDMwNzEyIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDEwMCAxMDAnPjxjaXJjbGUgY3g9JzUwJyBjeT0nNTAnIHI9JzQwJyBmaWxsPScjZWY0NDQ0Jy8+PC9zdmc+Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+    
+    <title>ŞAP SALGINI: OPERASYON</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0f172a; color: white; touch-action: none; overscroll-behavior: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        canvas { display: block; width: 100vw; height: 100dvh; }
-        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
-        .btn { transition: all 0.2s; }
-        .btn:active { transform: scale(0.95); }
-        .pulse-red { animation: pulseRed 2s infinite; }
-        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        #startScreen, #tutorialPanel { position: absolute; z-index: 50; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100dvh;
+            background-color: #030712;
+            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+            overscroll-behavior: none;
+            font-family: 'Inter', sans-serif; color: #f8fafc;
+        }
+        #gameCanvas { display: block; width: 100%; height: 100%; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tool-btn { transition: all 0.15s; border: 2px solid transparent; opacity: 0.4; }
+        .tool-btn.active {
+            opacity: 1; transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 5;
+        }
+        .produce-btn { transition: background-color 0.2s; }
+        .produce-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        @keyframes flashRed {
+            0% { background-color: rgba(239, 68, 68, 0.8); }
+            100% { background-color: rgba(239, 68, 68, 0); }
+        }
+        .flash-anim { animation: flashRed 3s ease-out forwards; }
     </style>
 </head>
 <body>
 
+    <canvas id="gameCanvas"></canvas>
+    <div class="scanlines"></div>
+
     <!-- Başlangıç Ekranı -->
-    <div id="startScreen" class="inset-0 flex items-center justify-center bg-slate-900 bg-opacity-95 flex-col p-6 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold text-red-500 mb-4 tracking-wider">ŞAP SALGINI: OPERASYON</h1>
-        <p class="text-gray-300 max-w-2xl mb-8 text-lg">Kriz yönetimi başlasın. Mihrakları tespit et, doğru aşıyı üret, filyasyon ekiplerini yönlendir ve ekonomiyi ayakta tut. Bütçen -5000₺'ye düşerse operasyon çöker!</p>
-        <button onclick="startGame()" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-xl shadow-[0_0_20px_rgba(220,38,38,0.5)]">OPERASYONA BAŞLA</button>
+    <div id="start-screen" class="fixed inset-0 bg-slate-950 z-[200] flex flex-col items-center justify-center p-4">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center tracking-tighter">ŞAP SALGINI: OPERASYON</h1>
+        <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-8 overflow-y-auto max-h-[60vh]">
+            <p><strong class="text-white">GÖREV:</strong> Ülke çapında yayılan mutasyonları durdur!</p>
+            <ul class="list-disc pl-5 flex flex-col gap-2">
+                <li><strong class="text-red-400">MİHRAK VE TEDBİR:</strong> Hastalık çıkan il <strong class="text-red-500">Kırmızı (Mihrak)</strong> kordona alınır. Komşuları <strong class="text-yellow-500">Sarı (Tedbir)</strong> kordona girer.</li>
+                <li><strong class="text-yellow-400">GELİŞMİŞ FİLYASYON KURALI:</strong> Kırmızı mihrak temizlendiğinde; Sarı kordondaki komşu il <strong class="text-blue-400">AŞILIYSA</strong> karantinası kalkar. <strong class="text-red-400">AŞISIZSA</strong> şüpheli olarak karantinada kalmaya devam eder! Orayı bizzat aşılamak zorundasınız.</li>
+                <li><strong class="text-orange-400">BÜTÇE VE ZAYİAT:</strong> Kırmızı kordon saniyede -₺20, Sarı kordon -₺10 yer. Enstitüde her suş için 10 dozluk güvenli stok vardır, fazlası kullanılmazsa bozulur.</li>
+                <li><strong class="text-purple-400">AR-GE / MARKET:</strong> Sağ üstten yeni ekipler (fiyatı katlanarak artar) ve Otonom Sistemler alabilirsiniz. Otomasyonlar oyunu "Felaket" seviyesine taşır!</li>
+                <li><strong class="text-red-500">İFLAS DURUMU:</strong> Bütçe <strong class="text-red-600">-₺5000</strong>'ye düşerse iflas edersiniz!</li>
+            </ul>
+        </div>
+        <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95">BAŞLA (TAM EKRAN)</button>
+    </div>
+
+    <div id="disaster-flash" class="fixed inset-0 z-[150] pointer-events-none hidden flex items-center justify-center">
+        <h2 id="disaster-text" class="text-4xl sm:text-6xl font-black text-white drop-shadow-[0_0_20px_rgba(0,0,0,1)] text-center px-4">FELAKET!</h2>
     </div>
 
     <!-- UI Overlay -->
-    <div id="uiLayer" class="absolute inset-0 pointer-events-none hidden flex-col justify-between p-2 md:p-4">
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none p-2 sm:p-4 flex flex-col justify-between z-10 hidden">
         
-        <!-- Üst Bar -->
-        <div class="flex justify-between items-start pointer-events-auto">
-            
-            <!-- Sol: Bütçe ve Enstitü -->
-            <div class="flex flex-col gap-2">
-                <!-- Bütçe Paneli -->
-                <div class="glass-panel p-3 flex gap-4 items-center">
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold tracking-wider">BÜTÇE</div>
-                        <div id="budgetDisplay" class="text-2xl font-black text-emerald-400">₺5000</div>
+        <div class="flex justify-between items-start gap-2">
+            <div class="flex flex-col gap-2 pointer-events-none">
+                <div class="glass-panel p-2 sm:p-3 rounded-2xl pointer-events-auto flex items-center gap-3 sm:gap-5 shadow-lg">
+                    <div class="flex flex-col">
+                        <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Bütçe</div>
+                        <div class="text-lg sm:text-xl font-black text-emerald-400">₺<span id="ui-money">2500</span></div>
                     </div>
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold tracking-wider">NET/SN</div>
-                        <div id="incomeDisplay" class="text-lg font-bold text-red-400">-0</div>
+                    <div class="flex flex-col">
+                        <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Net/Sn</div>
+                        <div class="text-xs sm:text-sm font-bold text-gray-300" id="ui-net">+0</div>
                     </div>
-                    <div class="ml-2 pl-4 border-l border-gray-600">
-                        <div class="text-xs text-gray-400 font-bold tracking-wider">GÜN</div>
-                        <div id="dayDisplay" class="text-xl font-bold text-blue-400">1</div>
+                    <div class="w-px h-8 bg-slate-700/50"></div>
+                    <div class="flex flex-col text-center">
+                        <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Gün</div>
+                        <div class="text-lg sm:text-xl font-black text-blue-400" id="ui-day">1</div>
                     </div>
-                </div>
-
-                <!-- Şap Enstitüsü -->
-                <div class="glass-panel p-2">
-                    <div class="text-xs text-center text-gray-400 font-bold tracking-wider mb-2">ŞAP ENSTİTÜSÜ (₺100/Doz)</div>
-                    <div class="flex gap-2 justify-center">
-                        <button onclick="produceVaccine('O')" class="btn bg-slate-800 border border-orange-500 rounded p-1 w-12 flex flex-col items-center">
-                            <span class="text-orange-500 font-bold text-xs">O:<span id="vac-O">0</span></span>
-                            <span class="text-[10px] text-gray-400">ÜRET</span>
-                        </button>
-                        <button onclick="produceVaccine('A')" class="btn bg-slate-800 border border-purple-500 rounded p-1 w-12 flex flex-col items-center">
-                            <span class="text-purple-500 font-bold text-xs">A:<span id="vac-A">0</span></span>
-                            <span class="text-[10px] text-gray-400">ÜRET</span>
-                        </button>
-                        <button onclick="produceVaccine('Asia-1')" class="btn bg-slate-800 border border-cyan-500 rounded p-1 w-12 flex flex-col items-center">
-                            <span class="text-cyan-500 font-bold text-xs">As1:<span id="vac-Asia-1">0</span></span>
-                            <span class="text-[10px] text-gray-400">ÜRET</span>
-                        </button>
-                        <button onclick="produceVaccine('SAT-2')" class="btn bg-slate-800 border border-pink-500 rounded p-1 w-12 flex flex-col items-center">
-                            <span class="text-pink-500 font-bold text-xs">S2:<span id="vac-SAT-2">0</span></span>
-                            <span class="text-[10px] text-gray-400">ÜRET</span>
-                        </button>
-                        <button onclick="produceVaccine('C')" class="btn bg-slate-800 border border-yellow-500 rounded p-1 w-12 flex flex-col items-center">
-                            <span class="text-yellow-500 font-bold text-xs">C:<span id="vac-C">0</span></span>
-                            <span class="text-[10px] text-gray-400">ÜRET</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sağ: Market Butonu -->
-            <button onclick="toggleMarket()" class="btn glass-panel p-3 flex items-center gap-2 hover:bg-slate-800">
-                <span class="text-2xl">🛒</span>
-                <span class="font-bold text-sm text-gray-200">AR-GE /<br>MARKET</span>
-            </button>
-        </div>
-
-        <!-- Öğretici Paneli (Alt Kısım) -->
-        <div id="tutorialPanel" class="hidden pointer-events-auto mb-10 w-full max-w-lg mx-auto glass-panel border-blue-500 border-2 p-4 text-center shadow-lg">
-            <h3 class="text-blue-400 font-bold text-lg mb-2" id="tutorialTitle">ÖĞRETİCİ (1/5)</h3>
-            <p class="text-gray-200 text-sm mb-4" id="tutorialText">Bilgi metni...</p>
-            <button id="tutorialBtn" onclick="nextTutorialStep()" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded hidden">ANLADIM</button>
-        </div>
-
-        <!-- Ekipler Göstergesi -->
-        <div class="pointer-events-none flex justify-center mb-4">
-            <div class="glass-panel px-4 py-2 flex items-center gap-3">
-                <span class="text-sm text-gray-400 font-bold">SAHA EKİPLERİ:</span>
-                <div id="teamsDisplay" class="flex gap-1">
-                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Market Modalı -->
-    <div id="marketModal" class="hidden absolute inset-0 z-40 bg-black bg-opacity-70 items-center justify-center pointer-events-auto p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">AR-GE & MARKET</h2>
-                <button onclick="toggleMarket(true)" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
-            </div>
-            
-            <div class="space-y-4">
-                <div class="p-3 border border-slate-700 rounded-lg bg-slate-800 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-blue-400">Yeni Filyasyon Ekibi</div>
-                        <div class="text-xs text-gray-400">Aynı anda daha çok ile müdahale et.</div>
-                    </div>
-                    <button onclick="buyTeam()" id="buyTeamBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold text-sm">₺800</button>
                 </div>
                 
-                <div class="p-3 border border-slate-700 rounded-lg bg-slate-800 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-purple-400">Otonom Aşı Üretimi</div>
-                        <div class="text-xs text-gray-400">Eksilen aşıları sistem kendi üretir.</div>
+                <!-- Şap Enstitüsü -->
+                <div class="glass-panel p-2 rounded-xl flex flex-col gap-1 shadow-lg w-[260px] sm:w-[320px] pointer-events-auto">
+                    <div class="text-[9px] sm:text-[10px] text-blue-300 font-bold tracking-widest text-center border-b border-slate-600 pb-1 mb-1">ŞAP ENSTİTÜSÜ (₺100)</div>
+                    <div class="flex flex-row justify-between items-center gap-1">
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-orange-500 mb-0.5">O:<span id="stk-o" class="text-white ml-0.5">5</span></span>
+                            <button class="produce-btn bg-slate-700 hover:bg-slate-600 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded" onclick="produce('Tip-O')">ÜRET</button>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-purple-500 mb-0.5">A:<span id="stk-a" class="text-white ml-0.5">0</span></span>
+                            <button class="produce-btn bg-slate-700 hover:bg-slate-600 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded" onclick="produce('Tip-A')">ÜRET</button>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-cyan-500 mb-0.5">As1:<span id="stk-as" class="text-white ml-0.5">0</span></span>
+                            <button class="produce-btn bg-slate-700 hover:bg-slate-600 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded" onclick="produce('Asia-1')">ÜRET</button>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-red-500 mb-0.5">S2:<span id="stk-s2" class="text-white ml-0.5">0</span></span>
+                            <button class="produce-btn bg-slate-700 hover:bg-slate-600 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded" onclick="produce('SAT-2')">ÜRET</button>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-yellow-500 mb-0.5">C:<span id="stk-c" class="text-white ml-0.5">0</span></span>
+                            <button class="produce-btn bg-slate-700 hover:bg-slate-600 text-white text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded" onclick="produce('Tip-C')">ÜRET</button>
+                        </div>
                     </div>
-                    <button onclick="buyAutoVaccine()" id="buyAutoVacBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded font-bold text-sm">₺4000</button>
+                    <div class="w-full h-1.5 bg-slate-800 mt-1 rounded overflow-hidden relative">
+                        <div id="produce-bar" class="h-full bg-blue-500 w-0 transition-all duration-100 ease-linear"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2 pointer-events-auto items-end">
+                <button id="btn-upgrades" class="glass-panel p-2 rounded-xl hover:bg-slate-700 transition flex items-center justify-center gap-2 border border-blue-500/50 shadow-lg active:scale-95">
+                    <span class="text-xl">🛒</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-blue-300">AR-GE / MARKET</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Öğretici Paneli -->
+        <div id="tutorial-panel" class="absolute bottom-32 sm:bottom-36 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-panel border border-blue-500 rounded-xl p-3 sm:p-4 text-center z-50 pointer-events-auto hidden shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+            <h3 class="text-blue-400 font-bold text-xs sm:text-sm mb-1 sm:mb-2" id="tutorial-title">ÖĞRETİCİ (1/5)</h3>
+            <p class="text-slate-200 text-[10px] sm:text-xs mb-3" id="tutorial-text">Bilgi metni...</p>
+            <button id="tutorial-btn" onclick="nextTutorialStep()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-6 rounded-lg text-xs shadow-lg active:scale-95 transition hidden mx-auto">DEVAM ET</button>
+        </div>
+
+        <div class="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 w-[98%] max-w-xl pb-2">
+            <div class="text-[10px] sm:text-xs text-blue-200 font-bold mb-1 ml-2 drop-shadow-md">
+                🚐 Saha Ekipleri: <span id="ui-teams" class="text-white">1</span> / <span id="ui-max-teams">1</span> (Uygulama: 2sn)
+            </div>
+            <div class="glass-panel p-2 rounded-2xl flex justify-between items-center gap-1 sm:gap-2 pointer-events-auto overflow-x-auto">
+                <button class="tool-btn active flex-1 p-2 rounded-xl flex flex-col items-center justify-center shrink-0 border-orange-500" data-strain="Tip-O">
+                    <span class="text-lg sm:text-xl">💉</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-orange-500">Tip-O</span>
+                </button>
+                <button class="tool-btn flex-1 p-2 rounded-xl flex flex-col items-center justify-center shrink-0 border-purple-500" data-strain="Tip-A">
+                    <span class="text-lg sm:text-xl">💉</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-purple-500">Tip-A</span>
+                </button>
+                <button class="tool-btn flex-1 p-2 rounded-xl flex flex-col items-center justify-center shrink-0 border-cyan-500" data-strain="Asia-1">
+                    <span class="text-lg sm:text-xl">💉</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-cyan-500">Asia-1</span>
+                </button>
+                <button class="tool-btn flex-1 p-2 rounded-xl flex flex-col items-center justify-center shrink-0 border-red-500" data-strain="SAT-2">
+                    <span class="text-lg sm:text-xl">💉</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-red-500">SAT-2</span>
+                </button>
+                <button class="tool-btn flex-1 p-2 rounded-xl flex flex-col items-center justify-center shrink-0 border-yellow-500" data-strain="Tip-C">
+                    <span class="text-lg sm:text-xl">💉</span>
+                    <span class="text-[10px] sm:text-xs font-bold text-yellow-500">Tip-C</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ar-Ge / Market Modal -->
+    <div id="upgrade-modal" class="fixed inset-0 bg-slate-950/90 z-50 items-center justify-center hidden pointer-events-auto">
+        <div class="glass-panel w-11/12 max-w-md rounded-3xl shadow-2xl border border-blue-900 overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-blue-900/50 p-4 flex justify-between items-center border-b border-blue-800 shrink-0">
+                <h2 class="text-lg font-black text-blue-100 flex items-center gap-2">🛒 Ar-Ge / Market</h2>
+                <button id="btn-close-upgrade" class="text-blue-400 hover:text-white font-bold text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-4 flex flex-col gap-3 overflow-y-auto">
+                <p class="text-[10px] sm:text-xs text-slate-300">Yapay Zeka ve Lojistik ağınızı kurun.</p>
+                
+                <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-emerald-400 text-sm">Yeni Ekip Aracı</h3>
+                        <p class="text-[10px] text-slate-400">Aşı kapasitesini artırır. Fiyat katlanarak artar.</p>
+                    </div>
+                    <button id="btn-buy-team" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺800
+                    </button>
                 </div>
 
-                <div class="p-3 border border-slate-700 rounded-lg bg-slate-800 flex justify-between items-center opacity-50" id="autoOpsContainer">
+                <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
-                        <div class="font-bold text-red-400">Otonom Filyasyon YZ</div>
-                        <div class="text-xs text-gray-400">Ekipler riskli bölgelere otomatik gider. (Önce Otonom Aşı gerekir)</div>
+                        <h3 class="font-bold text-blue-400 text-sm">Otonom Üretim (Y.Z.)</h3>
+                        <p class="text-[10px] text-slate-400">Seçili aşı stoğu 3'un altına düşerse otomatik üretir.</p>
                     </div>
-                    <button onclick="buyAutoOps()" id="buyAutoOpsBtn" disabled class="bg-gray-600 text-gray-300 px-3 py-2 rounded font-bold text-sm">₺12000</button>
+                    <button id="btn-buy-auto-prod" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺5000
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-purple-400 text-sm">Otonom Filyasyon (Y.Z.)</h3>
+                        <p class="text-[10px] text-slate-400">Boş ekipler, seçili aşının hastalarına otomatik müdahale eder.</p>
+                    </div>
+                    <button id="btn-buy-auto-vac" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺10000
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Game Over Ekranı -->
-    <div id="gameOverScreen" class="hidden absolute inset-0 z-50 bg-black bg-opacity-90 flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-5xl font-black text-red-600 mb-4">İFLAS ETTİNİZ</h1>
-        <p class="text-gray-300 text-xl mb-6">Bütçeniz -5000₺'nin altına düştü ve operasyon durduruldu. Salgın kontrolden çıktı.</p>
-        <p class="text-emerald-400 text-2xl font-bold mb-8">Dayanılan Gün: <span id="endDay"></span></p>
-        <button onclick="location.reload()" class="btn bg-white text-black hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-lg">YENİDEN DENE</button>
+    <!-- Game Over Screen -->
+    <div id="game-over" class="fixed inset-0 bg-red-950/95 z-[100] flex-col items-center justify-center pointer-events-auto hidden">
+        <h1 class="text-5xl sm:text-7xl font-black text-white mb-2 shadow-sm drop-shadow-lg tracking-tighter">İFLAS</h1>
+        <p class="text-sm sm:text-lg text-red-200 mb-8 font-bold text-center px-4 max-w-md">Karantina maliyetleri bütçenizi sıfırladı. Salgın kontrolden çıktı.</p>
+        <button onclick="location.reload()" class="bg-white text-red-950 font-black text-lg py-3 px-8 rounded-full shadow-2xl hover:scale-105 transition-transform">YENİDEN DENE</button>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-
     <script>
-        // --- TEMEL AYARLAR ---
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
-        resize();
+        const ctx = canvas.getContext('2d', { alpha: false }); 
 
-        // --- OYUN DEĞİŞKENLERİ ---
-        let isPlaying = false;
-        let isGameOver = false;
-        let budget = 3000;
-        let day = 1;
-        let totalTeams = 1;
-        let availableTeams = 1;
-        let nextTeamCost = 800;
-        let hasAutoVaccine = false;
-        let hasAutoOps = false;
+        const startScreen = document.getElementById('start-screen'), uiLayer = document.getElementById('ui-layer'), btnStart = document.getElementById('btn-start');
+        const uiMoney = document.getElementById('ui-money'), uiNet = document.getElementById('ui-net'), uiDay = document.getElementById('ui-day');
+        const uiTeams = document.getElementById('ui-teams'), uiMaxTeams = document.getElementById('ui-max-teams');
+        const toolBtns = document.querySelectorAll('.tool-btn'), produceBtns = document.querySelectorAll('.produce-btn'), produceBar = document.getElementById('produce-bar');
+        const btnUpgrades = document.getElementById('btn-upgrades'), upgradeModal = document.getElementById('upgrade-modal'), btnCloseUpgrade = document.getElementById('btn-close-upgrade');
+        const btnBuyTeam = document.getElementById('btn-buy-team'), btnBuyAutoProd = document.getElementById('btn-buy-auto-prod'), btnBuyAutoVac = document.getElementById('btn-buy-auto-vac');
+        const gameOverScreen = document.getElementById('game-over'), disasterFlash = document.getElementById('disaster-flash'), disasterText = document.getElementById('disaster-text');
         
-        let tutorialMode = true;
-        let tutorialStep = 1;
+        const uiStocks = { 'Tip-O': document.getElementById('stk-o'), 'Tip-A': document.getElementById('stk-a'), 'Asia-1': document.getElementById('stk-as'), 'SAT-2': document.getElementById('stk-s2'), 'Tip-C': document.getElementById('stk-c') };
+        const STRAINS = { 'Tip-O': { color: '#f97316' }, 'Tip-A': { color: '#a855f7' }, 'Asia-1': { color: '#06b6d4' }, 'SAT-2': { color: '#ef4444' }, 'Tip-C': { color: '#eab308' } };
+        const STRAIN_ORDER = Object.keys(STRAINS);
 
-        const strains = {
-            'O': { color: '#f97316' }, 
-            'A': { color: '#a855f7' }, 
-            'Asia-1': { color: '#06b6d4' }, 
-            'SAT-2': { color: '#ec4899' }, 
-            'C': { color: '#eab308' }
+        let gameStarted = false;
+        let tutorialMode = true, tutorialStep = 1;
+
+        let state = {
+            money: 2500, day: 1, 
+            maxTeams: 1, teamsAvailable: 1, teamCost: 800,
+            stock: { 'Tip-O': 5, 'Tip-A': 0, 'Asia-1': 0, 'SAT-2': 0, 'Tip-C': 0 },
+            producingTimer: -1, producingStrain: null,
+            activeTool: 'Tip-O', 
+            nodes: [], edges: [], trucks: [], particles: [],
+            isGameOver: false,
+            autoProduce: false, autoVaccine: false,
+            disasterPhase: 0, disasterDelayTimer: 0, disasterTimer: 0
         };
-        const vaccineStock = { 'O': 0, 'A': 0, 'Asia-1': 0, 'SAT-2': 0, 'C': 0 };
 
-        // Harita Noktaları (iller)
-        const nodes = [
-            { id: 0, name: "Edirne", x: 0.1, y: 0.2, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 1, name: "İstanbul", x: 0.25, y: 0.25, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 2, name: "Bursa", x: 0.25, y: 0.38, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 3, name: "İzmir", x: 0.15, y: 0.55, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 4, name: "Muğla", x: 0.2, y: 0.75, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 5, name: "Ankara", x: 0.45, y: 0.4, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 6, name: "Konya", x: 0.45, y: 0.65, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 7, name: "Antalya", x: 0.35, y: 0.8, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 8, name: "Samsun", x: 0.6, y: 0.15, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 9, name: "Trabzon", x: 0.8, y: 0.2, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 10, name: "Kars", x: 0.9, y: 0.25, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 11, name: "Erzurum", x: 0.85, y: 0.4, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 12, name: "Sivas", x: 0.65, y: 0.45, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 13, name: "Kayseri", x: 0.55, y: 0.55, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 14, name: "Malatya", x: 0.7, y: 0.6, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 15, name: "Diyarbakır", x: 0.8, y: 0.7, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 16, name: "Van", x: 0.95, y: 0.65, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 17, name: "Gaziantep", x: 0.65, y: 0.8, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 18, name: "Hatay", x: 0.6, y: 0.9, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
-            { id: 19, name: "Adana", x: 0.55, y: 0.75, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() }
+        let lastTime = 0, dayTimer = 0, economyTimer = 0, truckSpawnTimer = 0, quarantineRot = 0;
+        let outbreakTimer = 5.0, spoilageTimer = 30.0;
+
+        const MAP_DATA = [
+            { id: 'edirne', name: 'Edirne', px: 0.08, py: 0.22 },
+            { id: 'istanbul', name: 'İstanbul', px: 0.20, py: 0.25 },
+            { id: 'bursa', name: 'Bursa', px: 0.20, py: 0.35 },
+            { id: 'izmir', name: 'İzmir', px: 0.08, py: 0.55 },
+            { id: 'mugla', name: 'Muğla', px: 0.15, py: 0.75 },
+            { id: 'antalya', name: 'Antalya', px: 0.30, py: 0.82 },
+            { id: 'konya', name: 'Konya', px: 0.40, py: 0.65 },
+            { id: 'ankara', name: 'Ankara', px: 0.42, py: 0.42 },
+            { id: 'kayseri', name: 'Kayseri', px: 0.55, py: 0.55 },
+            { id: 'sivas', name: 'Sivas', px: 0.65, py: 0.45 },
+            { id: 'samsun', name: 'Samsun', px: 0.58, py: 0.20 },
+            { id: 'trabzon', name: 'Trabzon', px: 0.78, py: 0.22 },
+            { id: 'erzurum', name: 'Erzurum', px: 0.85, py: 0.35 },
+            { id: 'kars', name: 'Kars', px: 0.92, py: 0.25 },
+            { id: 'van', name: 'Van', px: 0.92, py: 0.65 },
+            { id: 'diyarbakir', name: 'Diyarbakır', px: 0.80, py: 0.70 },
+            { id: 'malatya', name: 'Malatya', px: 0.70, py: 0.60 },
+            { id: 'gaziantep', name: 'Gaziantep', px: 0.65, py: 0.80 },
+            { id: 'adana', name: 'Adana', px: 0.55, py: 0.80 },
+            { id: 'hatay', name: 'Hatay', px: 0.60, py: 0.92 }
         ];
 
-        const edges = [
-            [0,1], [1,2], [1,8], [2,3], [2,5], [3,4], [4,7], [3,6], 
-            [5,6], [5,8], [5,12], [6,7], [6,19], [7,19], [8,9], [8,12], 
-            [9,10], [9,11], [10,11], [11,12], [11,16], [12,13], [12,14], 
-            [13,19], [13,14], [14,15], [14,17], [15,16], [15,17], [17,19], [17,18], [18,19]
+        const EDGES_DATA = [
+            ['edirne', 'istanbul'], ['istanbul', 'bursa'], ['istanbul', 'izmir'], ['istanbul', 'ankara'],
+            ['bursa', 'izmir'], ['bursa', 'ankara'],
+            ['izmir', 'mugla'], ['izmir', 'konya'],
+            ['mugla', 'antalya'],
+            ['antalya', 'konya'], ['antalya', 'adana'],
+            ['konya', 'ankara'], ['konya', 'kayseri'], ['konya', 'adana'],
+            ['ankara', 'samsun'], ['ankara', 'kayseri'], ['ankara', 'sivas'],
+            ['samsun', 'trabzon'], ['samsun', 'sivas'],
+            ['kayseri', 'sivas'], ['kayseri', 'adana'], ['kayseri', 'malatya'],
+            ['adana', 'gaziantep'], ['adana', 'hatay'],
+            ['hatay', 'gaziantep'],
+            ['gaziantep', 'malatya'], ['gaziantep', 'diyarbakir'],
+            ['malatya', 'sivas'], ['malatya', 'diyarbakir'], ['malatya', 'erzurum'],
+            ['sivas', 'trabzon'], ['sivas', 'erzurum'],
+            ['trabzon', 'erzurum'], ['trabzon', 'kars'],
+            ['erzurum', 'kars'], ['erzurum', 'van'], ['erzurum', 'diyarbakir'],
+            ['diyarbakir', 'van'],
+            ['kars', 'van']
         ];
 
-        let trucks = [];
-        let sparks = [];
+        function initMap() {
+            state.nodes = MAP_DATA.map(n => ({
+                ...n, x: 0, y: 0, radius: 14,
+                infectedStrains: [], immunity: { 'Tip-O':0, 'Tip-A':0, 'Asia-1':0, 'SAT-2':0, 'Tip-C':0 },
+                qState: 0, qPendingState: 0, qTimer: -1,
+                quarantinedBy: new Set(), threatStrains: new Set(), yellowLocked: false,
+                vaccinatingTimer: -1, vaccinatingStrain: null
+            }));
 
-        // --- ANA FONKSİYONLAR ---
-        function startGame() {
-            // Arayüz geçişi (Öncelikle garanti altına alınır)
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('uiLayer').classList.remove('hidden');
-            document.getElementById('uiLayer').classList.add('flex');
-            isPlaying = true;
-            
-            // Öğretici Başlangıç Enfeksiyonu
-            const ankara = nodes.find(n => n.id === 5);
-            if(ankara) infectNode(ankara, 'O');
-            updateTutorialUI();
-            
-            gameLoop();
+            state.edges = EDGES_DATA.map(e => ({
+                from: state.nodes.find(n => n.id === e[0]),
+                to: state.nodes.find(n => n.id === e[1])
+            }));
 
-            // Tam ekranı en son ve güvenli şekilde dene (Hata verirse yoksay)
+            state.nodes.forEach(n => {
+                n.connectedNodes = [];
+                EDGES_DATA.forEach(e => {
+                    if (e[0] === n.id) n.connectedNodes.push(state.nodes.find(tn => tn.id === e[1]));
+                    if (e[1] === n.id) n.connectedNodes.push(state.nodes.find(tn => tn.id === e[0]));
+                });
+            });
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const topPad = 170; const botPad = 130; 
+            const w = canvas.width, h = canvas.height - (topPad + botPad); 
+            state.nodes.forEach(n => { n.x = 30 + n.px * (w - 60); n.y = topPad + n.py * h; n.radius = w < 500 ? 12 : 16; });
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function requestFullscreenSafe() {
             try {
-                let docElm = document.documentElement;
-                if (docElm.requestFullscreen) {
-                    let p = docElm.requestFullscreen();
-                    if (p && p.catch) p.catch(e => console.log("Tam ekran desteklenmiyor"));
+                let elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    let p = elem.requestFullscreen();
+                    if (p && p.catch) p.catch(() => {});
+                } else if (elem.webkitRequestFullscreen) {
+                    let p = elem.webkitRequestFullscreen();
+                    if (p && p.catch) p.catch(() => {});
                 }
-                else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
-                else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
-                else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
             } catch(e) {
-                console.log("Tam ekran denemesi başarısız oldu.");
+                console.log("Tam ekran hatası yoksayıldı:", e);
             }
         }
 
-        // --- ÖĞRETİCİ SİSTEMİ ---
+        // --- ÖĞRETİCİ SİSTEMİ FONKSİYONLARI ---
         function updateTutorialUI() {
-            const panel = document.getElementById('tutorialPanel');
-            const title = document.getElementById('tutorialTitle');
-            const text = document.getElementById('tutorialText');
-            const btn = document.getElementById('tutorialBtn');
+            const panel = document.getElementById('tutorial-panel');
+            const title = document.getElementById('tutorial-title');
+            const text = document.getElementById('tutorial-text');
+            const btn = document.getElementById('tutorial-btn');
             
+            if(!panel) return;
             panel.classList.remove('hidden');
             btn.classList.add('hidden');
 
             if (tutorialStep === 1) {
                 title.innerText = "ÖĞRETİCİ (1/5): MİHRAK VE KORDON";
-                text.innerText = "Ankara'da Tip-O hastalığı patlak verdi (Kırmızı). Etrafındaki illere yayılmasın diye 'Tedbir Karantinası' (Sarı) çekildi. Kırmızı mihrak temizlense bile, sarı iller aşılanmadan kordon kalkmaz!";
-                btn.innerText = "ANLADIM";
-                btn.classList.remove('hidden');
+                text.innerText = "Ankara'da Tip-O hastalığı patlak verdi (Kırmızı). Çevresine 'Tedbir Karantinası' (Sarı) çekildi. Bütçe ve zaman şu an donduruldu.";
+                btn.innerText = "DEVAM ET"; btn.classList.remove('hidden');
             } else if (tutorialStep === 2) {
-                title.innerText = "ÖĞRETİCİ (2/5): AŞI ÜRETİMİ";
-                text.innerText = "Sarı karantinadaki illerin üzerinde tehlike arz eden suş (Tehdit: Tip-O) yazar. Sol üstteki Şap Enstitüsü menüsünden Tip-O (O) aşısı üretin. (Maliyet: ₺100)";
+                title.innerText = "AŞI ÜRETİMİ (2/5)";
+                text.innerText = "Sol üstteki Şap Enstitüsü'nden Tip-O (O) butonuna basarak aşı üretin. (Oyun aşı üretilince devam edecek)";
             } else if (tutorialStep === 3) {
-                title.innerText = "ÖĞRETİCİ (3/5): SAHA MÜDAHALESİ";
-                text.innerText = "Aşınız hazır! Filyasyon ekibini sahaya göndermek için kırmızı ve sarı illerin üzerine tıklayın. Tüm hastalıklı ve şüpheli bölgeleri temizleyin.";
+                title.innerText = "LOJİSTİK DESTEK (3/5)";
+                text.innerText = "Tek ekiple baş edemezsiniz. Sağ üstten AR-GE/MARKET'i açın ve 'Yeni Ekip Aracı' satın alın.";
             } else if (tutorialStep === 4) {
-                title.innerText = "ÖĞRETİCİ (4/5): EKİP GENİŞLEMESİ";
-                text.innerText = "Kriz savuşturuldu! Ancak tek ekiple tüm ülkeyi koruyamazsınız. Sağ üstteki 'AR-GE / MARKET' butonuna tıklayın ve yeni bir filyasyon ekibi satın alın.";
+                title.innerText = "SAHA MÜDAHALESİ (4/5)";
+                text.innerText = "Aşınız hazır! Alt menüden Tip-O seçiliyken, kırmızı ve sarı illere tıklayın.\n\nDİKKAT: Sadece sarıları aşılamak yetmez, kırmızı mihrakı kesinlikle aşılamalısın!";
             } else if (tutorialStep === 5) {
-                title.innerText = "ÖĞRETİCİ TAMAMLANDI!";
-                text.innerText = "Artık salgın gerçek zamanlı yayılacak. Bütçenizi yönetin, aşı stoğunuzu ayarlayın ve eksi 5000₺'ye düşmemeye çalışın. Başarılar!";
-                btn.innerText = "OYUNA DÖN";
-                btn.classList.remove('hidden');
+                title.innerText = "SERBEST MOD (5/5)";
+                text.innerText = "Tebrikler! Salgını bastırdınız. Gerçek zaman, bütçe zayiatı ve rastgele salgınlar akmaya başlıyor. Başarılar!";
+                btn.innerText = "OYUNA DÖN"; btn.classList.remove('hidden');
             }
         }
 
-        function nextTutorialStep() {
-            if (tutorialStep === 1) {
-                tutorialStep = 2;
-                updateTutorialUI();
-            } else if (tutorialStep === 5) {
-                document.getElementById('tutorialPanel').classList.add('hidden');
-                tutorialMode = false;
+        window.nextTutorialStep = function() {
+            if (tutorialStep === 1) { 
+                tutorialStep = 2; updateTutorialUI(); 
+            } else if (tutorialStep === 5) { 
+                document.getElementById('tutorial-panel').classList.add('hidden'); 
+                tutorialMode = false; 
             }
         }
 
         function checkTutorialProgress() {
             if (!tutorialMode) return;
-            
-            if (tutorialStep === 2 && vaccineStock['O'] > 0) {
-                tutorialStep = 3;
-                updateTutorialUI();
+            if (tutorialStep === 2 && state.stock['Tip-O'] > 5) { 
+                tutorialStep = 3; updateTutorialUI(); 
             }
-            if (tutorialStep === 3) {
-                let anyThreat = nodes.some(n => n.state === 'infected' || n.yellowLocked);
-                if (!anyThreat) {
+            if (tutorialStep === 4 && !state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0)) { 
+                tutorialStep = 5; updateTutorialUI(); 
+            }
+        }
+
+        btnStart.addEventListener('click', () => {
+            // Önce arayüz geçişlerini yap (Hata olursa oyun donmasın diye)
+            startScreen.classList.add('hidden'); uiLayer.classList.remove('hidden');
+            gameStarted = true; lastTime = performance.now();
+            
+            tutorialMode = true; tutorialStep = 1;
+            infectNode(state.nodes.find(n => n.id === 'ankara'), 'Tip-O');
+            updateTutorialUI();
+
+            // En son tam ekran isteği gönderilir
+            requestFullscreenSafe();
+        });
+
+        toolBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toolBtns.forEach(b => { b.classList.remove('active'); b.style.borderColor = 'transparent'; });
+                btn.classList.add('active'); state.activeTool = btn.dataset.strain; btn.style.borderColor = STRAINS[state.activeTool].color;
+            });
+        });
+
+        window.produce = function(strain, isAuto = false) {
+            if (!gameStarted || state.isGameOver) return;
+            
+            // Öğretici 2. adım koruması
+            if (tutorialMode && tutorialStep === 2 && strain !== 'Tip-O') {
+                addFloatingText("Öğreticide sadece Tip-O üretin!", canvas.width/2, 120, '#ef4444');
+                return;
+            }
+
+            if ((state.money - 100) >= -5000 && state.producingTimer < 0) {
+                state.money -= 100; state.producingStrain = strain; state.producingTimer = 3.0;
+                produceBtns.forEach(b => b.disabled = true);
+                if(!isAuto) updateUI();
+            }
+        };
+
+        btnUpgrades.onclick = () => { upgradeModal.classList.remove('hidden'); upgradeModal.classList.add('flex'); };
+        btnCloseUpgrade.onclick = () => { upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex'); };
+
+        btnBuyTeam.onclick = () => {
+            if((state.money - state.teamCost) >= -5000 && state.maxTeams < state.nodes.length) {
+                state.money -= state.teamCost; state.maxTeams++; state.teamsAvailable++;
+                state.teamCost = Math.floor(state.teamCost * 1.6);
+                addFloatingText("Yeni Ekip!", canvas.width/2, canvas.height/2, '#4ade80');
+                updateUI();
+
+                if (tutorialMode && tutorialStep === 3) {
                     tutorialStep = 4;
+                    upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex');
                     updateTutorialUI();
                 }
             }
-            if (tutorialStep === 4 && totalTeams > 1) {
-                toggleMarket(true);
-                tutorialStep = 5;
-                updateTutorialUI();
+        };
+        btnBuyAutoProd.onclick = () => {
+            if((state.money - 5000) >= -5000) {
+                state.money -= 5000; state.autoProduce = true;
+                if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 30.0; }
+                btnBuyAutoProd.innerText = "AKTİF"; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50');
+                addFloatingText("YZ Üretim Aktif!", canvas.width/2, canvas.height/2, '#3b82f6'); updateUI();
             }
+        };
+        btnBuyAutoVac.onclick = () => {
+            if((state.money - 10000) >= -5000) {
+                state.money -= 10000; state.autoVaccine = true;
+                state.disasterPhase = 2; state.disasterTimer = 30.0 + Math.random() * 20.0;
+                btnBuyAutoVac.innerText = "AKTİF"; btnBuyAutoVac.disabled = true; btnBuyAutoVac.classList.add('opacity-50');
+                addFloatingText("YZ Filyasyon Aktif!", canvas.width/2, canvas.height/2, '#a855f7'); updateUI();
+            }
+        };
+
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('touchstart', handleInteraction, {passive: false});
+
+        function handleInteraction(e) {
+            if(!gameStarted || state.isGameOver) return;
+            if(e.target.closest('#ui-layer') || e.target.closest('.modal')) return;
+            let cx = e.clientX || (e.touches && e.touches[0].clientX), cy = e.clientY || (e.touches && e.touches[0].clientY);
+            let clickedNode = state.nodes.find(n => Math.hypot(cx - n.x, cy - n.y) <= n.radius + 15);
+            if (clickedNode) applyVaccine(clickedNode, cx, cy);
         }
 
-        function toggleMarket(forceClose = false) {
-            const m = document.getElementById('marketModal');
-            if (forceClose) {
-                m.classList.add('hidden');
-                m.classList.remove('flex');
-            } else {
-                if (m.classList.contains('hidden')) {
-                    m.classList.remove('hidden');
-                    m.classList.add('flex');
-                } else {
-                    m.classList.add('hidden');
-                    m.classList.remove('flex');
-                }
-            }
+        function applyVaccine(node, cx, cy, isAuto = false) {
+            if (node.vaccinatingTimer > 0) { if(!isAuto) addFloatingText("Aşılanıyor!", cx, cy, '#94a3b8'); return; }
+            if (state.stock[state.activeTool] <= 0) { if(!isAuto) addFloatingText("STOK YOK!", cx, cy, '#ef4444'); return; }
+            if (state.teamsAvailable <= 0) { if(!isAuto) addFloatingText("EKİP YOK!", cx, cy, '#ef4444'); return; }
+            
+            state.stock[state.activeTool]--; state.teamsAvailable--;
+            node.vaccinatingTimer = 2.0; node.vaccinatingStrain = state.activeTool;
+            if(!isAuto) addFloatingText("-1 Doz", cx, cy+20, STRAINS[state.activeTool].color);
+            updateUI();
         }
 
-        function produceVaccine(strain) {
-            if (budget >= 100 || (budget < 100 && budget - 100 > -5000)) {
-                budget -= 100;
-                vaccineStock[strain]++;
-                updateUI();
-                checkTutorialProgress();
+        function infectNode(node, strain) {
+            if (node.immunity[strain] > 0 || node.infectedStrains.includes(strain)) return;
+            node.infectedStrains.push(strain);
+            if (node.qState < 2 && node.qPendingState < 2) {
+                node.qTimer = 1.5; node.qPendingState = 2; 
             }
+            addFloatingText("VAKA!", node.x, node.y - 30, STRAINS[strain].color);
         }
 
-        function buyTeam() {
-            if (totalTeams < nodes.length && (budget >= nextTeamCost || (budget < nextTeamCost && budget - nextTeamCost > -5000))) {
-                budget -= nextTeamCost;
-                totalTeams++;
-                availableTeams++;
-                nextTeamCost = Math.floor(nextTeamCost * 1.6);
-                
-                document.getElementById('buyTeamBtn').innerText = totalTeams >= nodes.length ? "MAX" : `₺${nextTeamCost}`;
-                if (totalTeams >= nodes.length) document.getElementById('buyTeamBtn').disabled = true;
-                
-                updateUI();
-                checkTutorialProgress();
-            }
+        function triggerDisaster() {
+            let strain = STRAIN_ORDER[Math.floor(Math.random() * STRAIN_ORDER.length)];
+            disasterText.innerText = `FELAKET: ${strain} YAYILDI!`;
+            disasterFlash.classList.remove('hidden'); disasterFlash.classList.add('flex');
+            disasterFlash.style.animation = 'none'; disasterFlash.offsetHeight; disasterFlash.style.animation = null;
+            disasterFlash.classList.add('flash-anim');
+            setTimeout(() => { disasterFlash.classList.add('hidden'); disasterFlash.classList.remove('flex'); }, 3000);
+
+            let shuffled = [...state.nodes].sort(() => 0.5 - Math.random());
+            let count = Math.floor(state.nodes.length * (0.6 + Math.random()*0.15));
+            for(let i=0; i<count; i++) infectNode(shuffled[i], strain);
         }
 
-        function buyAutoVaccine() {
-            if (!hasAutoVaccine && (budget >= 4000 || (budget < 4000 && budget - 4000 > -5000))) {
-                budget -= 4000;
-                hasAutoVaccine = true;
-                document.getElementById('buyAutoVacBtn').innerText = "AKTİF";
-                document.getElementById('buyAutoVacBtn').disabled = true;
-                document.getElementById('buyAutoVacBtn').classList.replace('bg-purple-600', 'bg-green-600');
-                
-                let opsBtn = document.getElementById('buyAutoOpsBtn');
-                opsBtn.disabled = false;
-                opsBtn.classList.replace('bg-gray-600', 'bg-red-600');
-                opsBtn.classList.add('hover:bg-red-700', 'text-white');
-                document.getElementById('autoOpsContainer').classList.remove('opacity-50');
-                updateUI();
-            }
-        }
-
-        function buyAutoOps() {
-            if (!hasAutoOps && hasAutoVaccine && (budget >= 12000 || (budget < 12000 && budget - 12000 > -5000))) {
-                budget -= 12000;
-                hasAutoOps = true;
-                document.getElementById('buyAutoOpsBtn').innerText = "AKTİF";
-                document.getElementById('buyAutoOpsBtn').disabled = true;
-                document.getElementById('buyAutoOpsBtn').classList.replace('bg-red-600', 'bg-green-600');
-                updateUI();
-            }
-        }
+        function addFloatingText(text, x, y, color) { state.particles.push({ type: 'text', text, x, y, color, life: 1.0, maxLife: 1.0, velY: -20 }); }
+        function spawnExplosion(x, y, color) { for(let i=0; i<6; i++) state.particles.push({ type: 'spark', x, y, vx: (Math.random()-0.5)*80, vy: (Math.random()-0.5)*80, life: 0.4, maxLife: 0.4, color }); }
 
         function updateUI() {
-            const b = document.getElementById('budgetDisplay');
-            b.innerText = `₺${Math.floor(budget)}`;
-            b.className = budget < 0 ? "text-2xl font-black text-red-500" : "text-2xl font-black text-emerald-400";
+            uiMoney.innerText = Math.floor(state.money); 
+            if (state.money < 0) {
+                uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500');
+            } else {
+                uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400');
+            }
+
+            uiDay.innerText = state.day;
+            uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
+            STRAIN_ORDER.forEach(s => { uiStocks[s].innerText = state.stock[s]; });
             
-            document.getElementById('dayDisplay').innerText = Math.floor(day);
-            
-            Object.keys(vaccineStock).forEach(s => {
-                document.getElementById(`vac-${s}`).innerText = vaccineStock[s];
+            let income = 0, drain = 0;
+            state.nodes.forEach(n => {
+                if (n.qState === 2) drain += 20;
+                else if (n.qState === 1) drain += 10;
+                else if (n.infectedStrains.length === 0) income += 5;
             });
-
-            let tHTML = '';
-            for(let i=0; i<totalTeams; i++) {
-                tHTML += `<div class="w-3 h-3 rounded-full ${i < availableTeams ? 'bg-green-500' : 'bg-red-500'}"></div>`;
-            }
-            document.getElementById('teamsDisplay').innerHTML = tHTML;
+            let net = income - drain;
+            uiNet.innerText = (net >= 0 ? "+" : "") + net;
+            uiNet.className = "text-xs sm:text-sm font-bold " + (net >= 0 ? "text-emerald-400" : "text-red-500");
+            
+            if (state.producingTimer > 0) produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%';
+            else produceBar.style.width = '0%';
+            
+            if(state.maxTeams >= state.nodes.length) {
+                btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50');
+            } else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
         }
 
-        // --- HASTALIK MEKANİKLERİ ---
-        function infectNode(node, strain) {
-            if (node.state === 'clean' || node.state === 'yellow') {
-                node.state = 'infected';
-                node.infectionStrain = strain;
-                createSparks(node.x * canvas.width, node.y * canvas.height, strains[strain].color);
-                
-                edges.forEach(edge => {
-                    let n1 = nodes[edge[0]], n2 = nodes[edge[1]];
-                    let neighbor = (n1.id === node.id) ? n2 : (n2.id === node.id) ? n1 : null;
-                    if (neighbor && neighbor.state === 'clean') {
-                        neighbor.yellowLocked = true;
-                        neighbor.threatStrains.add(strain);
+        function update(dt) {
+            if(!gameStarted || state.isGameOver) return;
+            quarantineRot += dt;
+            
+            // Eğer öğretici modunda değilsek zaman, bütçe ve rastgele krizler işler
+            if (!tutorialMode) {
+                dayTimer += dt;
+                if (dayTimer >= 2.0) { state.day++; dayTimer = 0; updateUI(); }
+
+                economyTimer += dt;
+                if (economyTimer >= 1.0) { 
+                    let income = 0, drain = 0;
+                    state.nodes.forEach(n => {
+                        if (n.qState === 2) drain += 20; 
+                        else if (n.qState === 1) drain += 10;
+                        else if (n.infectedStrains.length === 0) income += 5;
+                        
+                        STRAIN_ORDER.forEach(s => {
+                            if (n.immunity[s] > 0) {
+                                n.immunity[s] -= 1;
+                                if (n.immunity[s] <= 0) addFloatingText(`Koruma Bitti (${s})`, n.x, n.y+30, '#94a3b8');
+                            }
+                        });
+                    });
+                    state.money += (income - drain); updateUI(); economyTimer = 0;
+                    if(state.money <= -5000) { 
+                        state.isGameOver = true; 
+                        gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
                     }
-                });
-            }
-        }
+                }
 
-        function cleanNode(node) {
-            if (node.state === 'infected') {
-                node.state = 'clean';
-                node.infectionStrain = null;
-            }
-            if (node.yellowLocked) {
-                node.yellowLocked = false;
-                node.threatStrains.clear();
-            }
-        }
+                spoilageTimer -= dt;
+                if(spoilageTimer <= 0) {
+                    let spoiled = false;
+                    STRAIN_ORDER.forEach(s => { 
+                        if (state.stock[s] > 10) { state.stock[s]--; spoiled = true; } 
+                    });
+                    if(spoiled) addFloatingText("Stok Zayi Oldu!", canvas.width/2, 120, '#ef4444');
+                    spoilageTimer = 30.0 + Math.random() * 10.0;
+                    updateUI();
+                }
 
-        canvas.addEventListener('click', (e) => {
-            if (!isPlaying || isGameOver || availableTeams <= 0) return;
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+                if (state.disasterPhase === 1) {
+                    if (state.disasterDelayTimer > 0) {
+                        state.disasterDelayTimer -= dt;
+                        if (state.disasterDelayTimer <= 0) state.disasterTimer = 60.0 + Math.random() * 40.0;
+                    } else {
+                        state.disasterTimer -= dt;
+                        if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 90.0 + Math.random() * 60.0; }
+                    }
+                } else if (state.disasterPhase === 2) {
+                    state.disasterTimer -= dt;
+                    if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 40.0 + Math.random() * 30.0; }
+                }
 
-            nodes.forEach(node => {
-                const nx = node.x * canvas.width;
-                const ny = node.y * canvas.height;
-                const dist = Math.hypot(mouseX - nx, mouseY - ny);
-
-                if (dist < 25) {
-                    if (node.state === 'infected' && vaccineStock[node.infectionStrain] > 0) {
-                        vaccineStock[node.infectionStrain]--;
-                        availableTeams--;
-                        sendTeam(node, 2000);
-                        updateUI();
-                    } 
-                    else if (node.yellowLocked) {
-                        let usedStrain = Array.from(node.threatStrains).find(s => vaccineStock[s] > 0);
-                        if (usedStrain) {
-                            vaccineStock[usedStrain]--;
-                            availableTeams--;
-                            sendTeam(node, 1500);
-                            updateUI();
+                outbreakTimer -= dt;
+                if (outbreakTimer <= 0) {
+                    let vuln = state.nodes.filter(n => n.qState === 0 && n.infectedStrains.length === 0);
+                    if(vuln.length > 0) {
+                        let randNode = vuln[Math.floor(Math.random() * vuln.length)];
+                        let maxIdx = Math.min(STRAIN_ORDER.length - 1, Math.floor(state.day / 15)); 
+                        let randStrain = STRAIN_ORDER[Math.floor(Math.random() * (maxIdx + 1))];
+                        infectNode(randNode, randStrain);
+                    }
+                    outbreakTimer = 5.0 + Math.random() * 3.0; 
+                }
+                
+                truckSpawnTimer += dt;
+                if (truckSpawnTimer >= 0.5) { 
+                    state.nodes.forEach(n => {
+                        if (n.qState === 0) {
+                            let spawnChance = n.infectedStrains.length > 0 ? 0.35 : 0.05;
+                            if(Math.random() < spawnChance) {
+                                let target = n.connectedNodes[Math.floor(Math.random() * n.connectedNodes.length)];
+                                let strain = n.infectedStrains.length > 0 ? n.infectedStrains[Math.floor(Math.random() * n.infectedStrains.length)] : null;
+                                state.trucks.push({ fromId: n.id, toId: target.id, progress: 0, speed: 0.3 + Math.random()*0.2, strain: strain });
+                            }
                         }
+                    });
+                    truckSpawnTimer = 0;
+                }
+            }
+
+            if (state.autoProduce && state.stock[state.activeTool] < 3 && state.producingTimer < 0 && (state.money - 100) >= -5000) {
+                produce(state.activeTool, true);
+            }
+
+            if (state.autoVaccine && state.teamsAvailable > 0 && state.stock[state.activeTool] > 0) {
+                let target = state.nodes.find(n => n.vaccinatingTimer <= 0 && n.infectedStrains.includes(state.activeTool));
+                if (!target) target = state.nodes.find(n => n.vaccinatingTimer <= 0 && n.qState === 1 && n.yellowLocked && n.immunity[state.activeTool] <= 0);
+                if (target) applyVaccine(target, target.x, target.y, true);
+            }
+
+            if (state.producingTimer > 0) {
+                state.producingTimer -= dt; updateUI(); 
+                if (state.producingTimer <= 0) {
+                    state.stock[state.producingStrain] += 3; state.producingTimer = -1;
+                    produceBtns.forEach(b => b.disabled = false);
+                    addFloatingText("+3 Doz", canvas.width-50, 80, STRAINS[state.producingStrain].color);
+                    updateUI();
+                    checkTutorialProgress();
+                }
+            }
+
+            state.nodes.forEach(n => {
+                if (n.qTimer > 0) {
+                    n.qTimer -= dt;
+                    if (n.qTimer <= 0) {
+                        n.qState = n.qPendingState; n.qPendingState = 0;
+                        if (n.qState === 2) {
+                            addFloatingText("MİHRAK", n.x, n.y, '#ef4444');
+                            n.connectedNodes.forEach(neighbor => {
+                                n.infectedStrains.forEach(s => neighbor.threatStrains.add(s));
+                                if (neighbor.qState === 0 && neighbor.qPendingState === 0) {
+                                    neighbor.qTimer = 1.5; neighbor.qPendingState = 1; neighbor.quarantinedBy.add(n.id);
+                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                    if (!isImmune) neighbor.yellowLocked = true;
+                                } else if (neighbor.qState === 1 || neighbor.qPendingState === 1) {
+                                    neighbor.quarantinedBy.add(n.id);
+                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                    if (!isImmune) neighbor.yellowLocked = true;
+                                }
+                            });
+                        } else if (n.qState === 1) {
+                            addFloatingText("TEDBİR", n.x, n.y+15, '#eab308');
+                        }
+                        updateUI();
+                    }
+                }
+
+                if (n.vaccinatingTimer > 0) {
+                    n.vaccinatingTimer -= dt;
+                    if (n.vaccinatingTimer <= 0) {
+                        state.teamsAvailable++;
+                        let vStrain = n.vaccinatingStrain;
+                        n.infectedStrains = n.infectedStrains.filter(s => s !== vStrain);
+                        n.immunity[vStrain] = 40.0; 
+                        
+                        if (n.qState === 1) {
+                            let isFullyImmune = Array.from(n.threatStrains).every(s => n.immunity[s] > 0);
+                            if (isFullyImmune) n.yellowLocked = false;
+                        } else {
+                            n.yellowLocked = false;
+                        }
+                        
+                        addFloatingText("Temizlendi", n.x, n.y-25, STRAINS[vStrain].color);
+                        
+                        if (n.qState === 2 && n.infectedStrains.length === 0) {
+                            n.qState = 0; n.threatStrains.clear();
+                            n.connectedNodes.forEach(neighbor => neighbor.quarantinedBy.delete(n.id));
+                            addFloatingText("Mihrak Çözüldü", n.x, n.y+20, '#4ade80');
+                        }
+                        updateUI();
+                    }
+                }
+
+                if (n.qState === 1 && n.quarantinedBy.size === 0 && n.infectedStrains.length === 0) {
+                    if (!n.yellowLocked) {
+                        n.qState = 0; n.threatStrains.clear();
+                        addFloatingText("Tedbir Kalktı", n.x, n.y+20, '#4ade80');
+                        updateUI();
                     }
                 }
             });
-            checkTutorialProgress();
-        });
 
-        function sendTeam(node, duration) {
-            setTimeout(() => {
-                cleanNode(node);
-                availableTeams++;
-                budget += (node.state === 'infected' ? 300 : 100);
-                updateUI();
-                checkTutorialProgress();
-            }, duration);
-        }
+            state.trucks = state.trucks.filter(t => {
+                t.progress += t.speed * dt;
+                let fromNode = state.nodes.find(n => n.id === t.fromId), toNode = state.nodes.find(n => n.id === t.toId);
+                if (toNode.qState > 0 && t.progress >= 0.8) { 
+                    spawnExplosion(fromNode.x + (toNode.x - fromNode.x)*0.8, fromNode.y + (toNode.y - fromNode.y)*0.8, '#ef4444'); 
+                    return false; 
+                }
+                if (t.progress >= 1.0) {
+                    if (t.strain) infectNode(toNode, t.strain);
+                    return false; 
+                }
+                return true;
+            });
 
-        // --- ÇİZİM VE ANİMASYON ---
-        function createSparks(x, y, color) {
-            for(let i=0; i<8; i++) {
-                sparks.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
-                    life: 1, color: color
-                });
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                let p = state.particles[i];
+                if (p.type === 'text') p.y += p.velY * dt;
+                else if (p.type === 'spark') { p.x += p.vx * dt; p.y += p.vy * dt; }
+                p.life -= dt;
+                if (p.life <= 0) state.particles.splice(i, 1);
             }
+            
+            checkTutorialProgress();
         }
 
-        function drawPaths() {
-            ctx.lineWidth = 1;
-            edges.forEach(edge => {
-                const n1 = nodes[edge[0]];
-                const n2 = nodes[edge[1]];
-                ctx.beginPath();
-                ctx.moveTo(n1.x * canvas.width, n1.y * canvas.height);
-                ctx.lineTo(n2.x * canvas.width, n2.y * canvas.height);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-                ctx.stroke();
-            });
-        }
+        function draw() {
+            ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if(!gameStarted) return;
 
-        function spawnTruck() {
-            let edge = edges[Math.floor(Math.random() * edges.length)];
-            let startNode = nodes[edge[Math.random() > 0.5 ? 0 : 1]];
-            let endNode = nodes[edge[0] === startNode.id ? 1 : 0];
-            let carryStrain = startNode.state === 'infected' ? startNode.infectionStrain : null;
+            ctx.lineWidth = 2; 
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.beginPath();
+            state.edges.forEach(e => { ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y); });
+            ctx.stroke();
 
-            trucks.push({
-                x: startNode.x * canvas.width, y: startNode.y * canvas.height,
-                target: endNode, progress: 0,
-                speed: 0.005 + (Math.random() * 0.005),
-                startX: startNode.x * canvas.width, startY: startNode.y * canvas.height,
-                carryStrain: carryStrain
-            });
-        }
-
-        function drawNodesAndElements() {
-            let totalIncome = 0;
-
-            for (let i = trucks.length - 1; i >= 0; i--) {
-                let t = trucks[i];
-                t.progress += t.speed;
-                let tx = t.target.x * canvas.width;
-                let ty = t.target.y * canvas.height;
-                t.x = t.startX + (tx - t.startX) * t.progress;
-                t.y = t.startY + (ty - t.startY) * t.progress;
-
-                ctx.beginPath();
-                ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
-                if (t.carryStrain) {
-                    ctx.fillStyle = strains[t.carryStrain].color;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = ctx.fillStyle;
+            state.trucks.forEach(t => {
+                let fromNode = state.nodes.find(n => n.id === t.fromId), toNode = state.nodes.find(n => n.id === t.toId);
+                let x = fromNode.x + (toNode.x - fromNode.x) * t.progress, y = fromNode.y + (toNode.y - fromNode.y) * t.progress;
+                
+                ctx.beginPath(); 
+                if (t.strain) {
+                    ctx.arc(x, y, 4, 0, Math.PI * 2); 
+                    ctx.fillStyle = STRAINS[t.strain].color;
+                    ctx.shadowColor = STRAINS[t.strain].color;
+                    ctx.shadowBlur = 6; 
                 } else {
-                    ctx.fillStyle = "#94a3b8";
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#64748b'; 
                     ctx.shadowBlur = 0;
                 }
                 ctx.fill();
-
-                if (t.progress >= 1) trucks.splice(i, 1);
-            }
-            ctx.shadowBlur = 0;
-
-            nodes.forEach(node => {
-                const nx = node.x * canvas.width;
-                const ny = node.y * canvas.height;
-
-                if (node.state === 'infected') totalIncome -= 30;
-                if (node.yellowLocked) totalIncome -= 10;
-                if (node.state === 'clean' && !node.yellowLocked) totalIncome += 5;
-
-                if (node.state === 'infected' || node.yellowLocked) {
-                    ctx.beginPath();
-                    ctx.arc(nx, ny, 20, 0, Math.PI * 2);
-                    ctx.strokeStyle = node.state === 'infected' ? "rgba(239, 68, 68, 0.5)" : "rgba(234, 179, 8, 0.5)";
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([4, 4]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-
-                ctx.beginPath();
-                ctx.arc(nx, ny, 10, 0, Math.PI * 2);
-                ctx.fillStyle = node.state === 'infected' ? strains[node.infectionStrain].color : "#0f766e";
-                ctx.fill();
-
-                ctx.fillStyle = "rgba(255,255,255,0.7)";
-                ctx.font = "10px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(node.name, nx, ny + 20);
-
-                if (node.yellowLocked && node.threatStrains.size > 0) {
-                    let ts = Array.from(node.threatStrains)[0];
-                    ctx.fillStyle = strains[ts].color;
-                    ctx.font = "bold 11px sans-serif";
-                    ctx.fillText(`Tehdit: Tip-${ts}`, nx, ny - 15);
-                }
+                ctx.shadowBlur = 0; 
             });
 
-            for (let i = sparks.length - 1; i >= 0; i--) {
-                let s = sparks[i];
-                s.x += s.vx; s.y += s.vy; s.life -= 0.05;
-                ctx.globalAlpha = Math.max(0, s.life);
-                ctx.fillStyle = s.color;
-                ctx.beginPath(); ctx.arc(s.x, s.y, 2, 0, Math.PI*2); ctx.fill();
-                ctx.globalAlpha = 1;
-                if (s.life <= 0) sparks.splice(i, 1);
-            }
-
-            document.getElementById('incomeDisplay').innerText = totalIncome > 0 ? `+${totalIncome}` : totalIncome;
-            budget += (totalIncome / 60);
-        }
-
-        // --- OYUN DÖNGÜSÜ ---
-        let frameCount = 0;
-        function gameLoop() {
-            if (!isPlaying) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPaths();
-            drawNodesAndElements();
-
-            frameCount++;
-            
-            if (!tutorialMode) {
-                day += 1/60;
-
-                if (frameCount % 60 === 0) spawnTruck();
-
-                if (frameCount % 400 === 0) {
-                    let cleanNodes = nodes.filter(n => n.state === 'clean' && !n.yellowLocked);
-                    if (cleanNodes.length > 0) {
-                        let target = cleanNodes[Math.floor(Math.random() * cleanNodes.length)];
-                        let strainKeys = Object.keys(strains);
-                        infectNode(target, strainKeys[Math.floor(Math.random() * strainKeys.length)]);
-                    }
+            state.nodes.forEach(n => {
+                let activeImmunities = STRAIN_ORDER.filter(s => n.immunity[s] > 0);
+                if (activeImmunities.length > 0) {
+                    let aStep = (Math.PI * 2) / activeImmunities.length, cAngle = 0;
+                    activeImmunities.forEach(s => {
+                        ctx.beginPath(); ctx.arc(n.x, n.y, n.radius + 5, cAngle, cAngle + aStep);
+                        ctx.strokeStyle = STRAINS[s].color; ctx.lineWidth = 3;
+                        ctx.globalAlpha = Math.min(1.0, n.immunity[s]/10);
+                        ctx.stroke(); cAngle += aStep;
+                    });
+                    ctx.globalAlpha = 1.0;
                 }
 
-                if (frameCount % 1800 === 0) {
-                    Object.keys(vaccineStock).forEach(s => {
-                        if (vaccineStock[s] > 10) vaccineStock[s]--;
+                ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+                ctx.fillStyle = n.infectedStrains.length === 0 ? '#10b981' : '#1e293b';
+                ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#334155'; ctx.stroke();
+
+                if (n.infectedStrains.length > 0) {
+                    let angleStep = (Math.PI * 2) / n.infectedStrains.length, currentAngle = 0;
+                    n.infectedStrains.forEach(strain => {
+                        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.arc(n.x, n.y, n.radius, currentAngle, currentAngle + angleStep);
+                        ctx.fillStyle = STRAINS[strain].color; ctx.fill(); currentAngle += angleStep;
                     });
                 }
 
-                if (frameCount % 60 === 0) {
-                    if (hasAutoVaccine) {
-                        Object.keys(vaccineStock).forEach(s => {
-                            if (vaccineStock[s] < 5 && budget >= 100) produceVaccine(s);
-                        });
-                    }
-                    if (hasAutoOps && availableTeams > 0) {
-                        let target = nodes.find(n => n.state === 'infected' && vaccineStock[n.infectionStrain] > 0);
-                        if (!target) {
-                            target = nodes.find(n => n.yellowLocked && Array.from(n.threatStrains).some(ts => vaccineStock[ts] > 0));
-                        }
-                        if (target) {
-                            let reqStrain = target.state === 'infected' ? target.infectionStrain : Array.from(target.threatStrains).find(ts => vaccineStock[ts] > 0);
-                            vaccineStock[reqStrain]--;
-                            availableTeams--;
-                            sendTeam(target, 1500);
-                        }
-                    }
+                if (n.qState > 0) {
+                    ctx.save(); ctx.translate(n.x, n.y); ctx.rotate(quarantineRot);
+                    ctx.beginPath(); ctx.arc(0, 0, n.radius + 9, 0, Math.PI * 2);
+                    ctx.strokeStyle = n.qState === 2 ? '#ef4444' : '#eab308';
+                    ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke();
+                    ctx.restore();
                 }
-            }
 
-            updateUI();
+                if (n.qState === 1 && n.threatStrains.size > 0) {
+                    let threatY = n.y - n.radius - 20;
+                    Array.from(n.threatStrains).forEach((strain, idx) => {
+                        ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
+                        ctx.fillStyle = STRAINS[strain].color; ctx.shadowColor = 'black'; ctx.shadowBlur = 3;
+                        ctx.fillText(`Tehdit: ${strain}`, n.x, threatY - (idx * 12));
+                        ctx.shadowBlur = 0;
+                    });
+                }
 
-            if (budget <= -5000) {
-                isGameOver = true;
-                isPlaying = false;
-                document.getElementById('endDay').innerText = Math.floor(day);
-                document.getElementById('gameOverScreen').classList.remove('hidden');
-                document.getElementById('gameOverScreen').classList.add('flex');
-            } else {
-                requestAnimationFrame(gameLoop);
-            }
+                if (n.vaccinatingTimer > 0) {
+                    let p = 1.0 - (n.vaccinatingTimer / 2.0);
+                    ctx.beginPath(); ctx.arc(n.x, n.y, n.radius + 14, -Math.PI/2, -Math.PI/2 + (Math.PI * 2 * p));
+                    ctx.strokeStyle = STRAINS[n.vaccinatingStrain].color; ctx.lineWidth = 4; ctx.stroke();
+                }
+
+                ctx.font = 'bold 10px Inter'; ctx.textAlign = 'center';
+                ctx.fillStyle = '#f8fafc'; ctx.fillText(n.name, n.x, n.y + n.radius + 16);
+            });
+
+            state.particles.forEach(p => {
+                ctx.globalAlpha = p.life / p.maxLife;
+                if (p.type === 'text') { ctx.font = 'bold 12px Inter'; ctx.fillStyle = p.color; ctx.textAlign = 'center'; ctx.fillText(p.text, p.x, p.y); } 
+                else if (p.type === 'spark') { ctx.fillStyle = p.color; ctx.fillRect(p.x-2, p.y-2, 4, 4); }
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        function gameLoop(timestamp) {
+            let dt = (timestamp - lastTime) / 1000; if(dt > 0.1) dt = 0.1; lastTime = timestamp;
+            update(dt); draw(); requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = () => { 
+            initMap(); resizeCanvas(); 
+            document.querySelector(`[data-strain="${state.activeTool}"]`).style.borderColor = STRAINS[state.activeTool].color;
+            updateUI(); draw(); requestAnimationFrame(gameLoop); 
+        };
+
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => { self.skipWaiting(); });
+                self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+                self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => new Response('Network error'))); });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).then(reg => {
+                console.log('PWA Service Worker registered.');
+            }).catch(err => {
+                console.log('PWA Registration failed:', err);
+            });
         }
     </script>
 </body>
 </html>
+```
