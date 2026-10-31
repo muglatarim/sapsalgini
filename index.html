@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -55,13 +56,9 @@
     <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="fixed inset-0 bg-slate-950 z-[200] flex flex-col items-center justify-center p-4">
         
-        <!-- Önbellek Temizleme Butonu (Altta, Zarif) -->
-        <button onclick="clearCacheAndReload()" class="absolute bottom-10 bg-slate-800/80 text-white text-[10px] px-3 py-1.5 rounded border border-slate-600 hover:bg-slate-700 shadow flex items-center gap-1 active:scale-95 transition pointer-events-auto">
-            <span class="text-xs">🔄</span> Sürümü Güncelle (Önbelleği Temizle)
-        </button>
-
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center tracking-tighter">ŞAP SALGINI: OPERASYON</h1>
-        <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-8 overflow-y-auto max-h-[60vh]">
+        
+        <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-8 overflow-y-auto max-h-[50vh]">
             <p><strong class="text-white">GÖREV:</strong> Ülke çapında yayılan mutasyonları durdur! 500. güne ulaşarak salgını tamamen eradike et.</p>
             <ul class="list-disc pl-5 flex flex-col gap-2">
                 <li><strong class="text-red-400">MİHRAK VE TEDBİR:</strong> Hastalık çıkan il <strong class="text-red-500">Kırmızı (Mihrak)</strong> kordona alınır. Komşuları <strong class="text-yellow-500">Sarı (Tedbir)</strong> kordona girer.</li>
@@ -71,10 +68,18 @@
                 <li><strong class="text-red-500">İFLAS DURUMU:</strong> Bütçe <strong class="text-red-600">-₺5000</strong>'ye düşerse iflas edersiniz!</li>
             </ul>
         </div>
-        <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95 mb-10">BAŞLA (TAM EKRAN)</button>
         
-        <!-- Yaratıcı İmzası -->
-        <div class="absolute bottom-3 text-[10px] text-slate-500/50 font-bold tracking-[0.3em] uppercase pointer-events-none">by iboo48</div>
+        <!-- Butonlar Düzenli Blok Halinde -->
+        <div class="flex flex-col items-center gap-4 z-10">
+            <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95">BAŞLA (TAM EKRAN)</button>
+            
+            <button onclick="clearCacheAndReload()" class="bg-slate-800/80 text-white text-[10px] px-3 py-2 rounded border border-slate-600 hover:bg-slate-700 shadow flex items-center gap-1 active:scale-95 transition pointer-events-auto">
+                <span class="text-xs">🔄</span> Sürümü Güncelle (Önbelleği Temizle)
+            </button>
+        </div>
+        
+        <!-- Resmi İmza -->
+        <div class="absolute bottom-4 text-[11px] sm:text-xs text-slate-500 font-bold tracking-widest pointer-events-none">© 2026 Muğla İl Tarım ve Orman Müdürlüğü</div>
     </div>
 
     <div id="disaster-flash" class="fixed inset-0 z-[150] pointer-events-none hidden flex items-center justify-center">
@@ -201,7 +206,7 @@
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-blue-400 text-sm">Otonom Üretim (Y.Z.)</h3>
-                        <p class="text-[10px] text-slate-400">Seçili aşıyı otomatik üretir. Limit kademeli artar.</p>
+                        <p class="text-[10px] text-slate-400" id="auto-prod-desc">Stok azalınca üretir. Maks 6 Doz sınırı.</p>
                     </div>
                     <button id="btn-buy-auto-prod" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
                         ₺5000
@@ -211,7 +216,7 @@
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-purple-400 text-sm">Otonom Filyasyon (Y.Z.)</h3>
-                        <p class="text-[10px] text-slate-400">Boş ekipler, seçili aşının hastalarına otomatik müdahale eder.</p>
+                        <p class="text-[10px] text-slate-400">Boş ekipler seçili aşıyla otomatik müdahale eder.</p>
                     </div>
                     <button id="btn-buy-auto-vac" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
                         ₺10000
@@ -221,23 +226,32 @@
         </div>
     </div>
 
-    <!-- Ortak Game Over / Zafer Ekranı -->
-    <div id="game-over" class="fixed inset-0 bg-slate-950/95 z-[100] flex-col items-center justify-center pointer-events-auto hidden">
-        <h1 id="game-over-title" class="text-5xl sm:text-7xl font-black text-white mb-2 shadow-sm drop-shadow-lg tracking-tighter">İFLAS</h1>
-        <p id="game-over-day" class="text-xl sm:text-2xl font-bold text-yellow-400 mb-2"></p>
-        <p id="game-over-desc" class="text-sm sm:text-lg text-red-200 mb-8 font-bold text-center px-4 max-w-md">Karantina maliyetleri bütçenizi sıfırladı. Salgın kontrolden çıktı.</p>
-        <button onclick="location.reload()" class="bg-white text-slate-950 font-black text-lg py-3 px-8 rounded-full shadow-2xl hover:scale-105 transition-transform">YENİDEN DENE</button>
+    <!-- Zafer Ekranı (500. Gün) -->
+    <div id="victory-screen" class="fixed inset-0 bg-emerald-950/95 z-[100] flex-col items-center justify-center pointer-events-auto hidden">
+        <h1 class="text-5xl sm:text-7xl font-black text-white mb-4 shadow-sm drop-shadow-lg tracking-tighter text-center">TEBRİKLER!</h1>
+        <p class="text-lg sm:text-xl text-emerald-200 mb-8 font-bold text-center px-4 max-w-xl">500. Güne ulaştınız!<br><br>Üstün yönetim becerileriniz sayesinde Şap hastalıklarının ilgili suşları ülke çapında başarıyla eradike edildi.</p>
+        <button onclick="location.reload()" class="bg-white text-emerald-950 font-black text-lg py-3 px-8 rounded-full shadow-2xl hover:scale-105 transition-transform">YENİDEN OYNA</button>
+    </div>
+
+    <!-- İflas Ekranı -->
+    <div id="game-over" class="fixed inset-0 bg-red-950/95 z-[100] flex-col items-center justify-center pointer-events-auto hidden">
+        <h1 class="text-5xl sm:text-7xl font-black text-white mb-4 shadow-sm drop-shadow-lg tracking-tighter">İFLAS</h1>
+        <p class="text-sm sm:text-lg text-red-200 mb-4 font-bold text-center px-4 max-w-md">Karantina maliyetleri bütçenizi sıfırladı. Salgın kontrolden çıktı.</p>
+        <p class="text-emerald-400 text-xl font-bold mb-8">Dayanılan Gün: <span id="endDay"></span></p>
+        <button onclick="location.reload()" class="bg-white text-red-950 font-black text-lg py-3 px-8 rounded-full shadow-2xl hover:scale-105 transition-transform">YENİDEN DENE</button>
     </div>
 
     <script>
-        function clearCacheAndReload() {
+        window.clearCacheAndReload = function() {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
                     for(let registration of registrations) { registration.unregister(); }
                     window.location.reload(true);
                 });
-            } else { window.location.reload(true); }
-        }
+            } else {
+                window.location.reload(true);
+            }
+        };
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d', { alpha: false }); 
@@ -257,6 +271,12 @@
         let gameStarted = false;
         let tutorialMode = true, tutorialStep = 1;
 
+        // Otonom Üretim Seviyeleri (2 seviye, limit: 6 doz)
+        const autoProdLevels = [
+            { limit: 3, cost: 5000 },
+            { limit: 6, cost: 12000 }
+        ];
+
         let state = {
             money: 2500, day: 1, 
             maxTeams: 1, teamsAvailable: 1, teamCost: 800,
@@ -265,13 +285,15 @@
             activeTool: 'Tip-O', 
             nodes: [], edges: [], trucks: [], particles: [],
             isGameOver: false,
-            autoProduce: false, autoVaccine: false,
-            autoProdLevel: 0, autoProdLimit: 0,
+            
+            autoProduce: false, autoProduceLevel: 0, autoProduceLimit: 0,
+            autoVaccine: false,
+            
             disasterPhase: 0, disasterDelayTimer: 0, disasterTimer: 0
         };
 
         let lastTime = 0, dayTimer = 0, economyTimer = 0, truckSpawnTimer = 0, quarantineRot = 0;
-        let outbreakTimer = 18.0, spoilageTimer = 30.0; 
+        let outbreakTimer = 16.0, spoilageTimer = 30.0;
 
         const MAP_DATA = [
             { id: 'edirne', name: 'Edirne', px: 0.08, py: 0.22 },
@@ -342,7 +364,8 @@
 
         function resizeCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            const topPad = 140; const botPad = 160; 
+            const topPad = 140; 
+            const botPad = 160; 
             const w = canvas.width, h = canvas.height - (topPad + botPad); 
             state.nodes.forEach(n => { n.x = 30 + n.px * (w - 60); n.y = topPad + n.py * h; n.radius = w < 500 ? 12 : 16; });
         }
@@ -351,16 +374,28 @@
         function requestFullscreenSafe() {
             try {
                 let elem = document.documentElement;
-                if (elem.requestFullscreen) { let p = elem.requestFullscreen(); if(p && p.catch) p.catch(()=>{}); } 
-                else if (elem.webkitRequestFullscreen) { let p = elem.webkitRequestFullscreen(); if(p && p.catch) p.catch(()=>{}); }
-            } catch(e) { }
+                if (elem.requestFullscreen) {
+                    let p = elem.requestFullscreen();
+                    if (p && p.catch) p.catch(() => {});
+                } else if (elem.webkitRequestFullscreen) {
+                    let p = elem.webkitRequestFullscreen();
+                    if (p && p.catch) p.catch(() => {});
+                }
+            } catch(e) {
+                console.log("Tam ekran hatası yoksayıldı:", e);
+            }
         }
 
-        // --- ÖĞRETİCİ SİSTEMİ ---
+        // --- ÖĞRETİCİ SİSTEMİ FONKSİYONLARI ---
         function updateTutorialUI() {
-            const panel = document.getElementById('tutorial-panel'), title = document.getElementById('tutorial-title'), text = document.getElementById('tutorial-text'), btn = document.getElementById('tutorial-btn');
+            const panel = document.getElementById('tutorial-panel');
+            const title = document.getElementById('tutorial-title');
+            const text = document.getElementById('tutorial-text');
+            const btn = document.getElementById('tutorial-btn');
+            
             if(!panel) return;
-            panel.classList.remove('hidden'); btn.classList.add('hidden');
+            panel.classList.remove('hidden');
+            btn.classList.add('hidden');
 
             if (tutorialStep === 1) {
                 title.innerText = "ÖĞRETİCİ (1/5): MİHRAK VE KORDON";
@@ -377,28 +412,38 @@
                 text.innerText = "Aşınız hazır! Alt menüden Tip-O seçiliyken, kırmızı ve sarı illere tıklayın.\n\nDİKKAT: Sadece sarıları aşılamak yetmez, kırmızı mihrakı kesinlikle aşılamalısın!";
             } else if (tutorialStep === 5) {
                 title.innerText = "SERBEST MOD (5/5)";
-                text.innerText = "Tebrikler! Salgını bastırdınız. Gerçek zaman, bütçe zayiatı ve rastgele salgınlar akmaya başlıyor. Başarılar!";
+                text.innerText = "Tebrikler! Salgını bastırdınız. Gerçek zaman, bütçe zayiatı ve hastalık çıkışları başlıyor. 500. güne kadar dayan! Başarılar!";
                 btn.innerText = "OYUNA DÖN"; btn.classList.remove('hidden');
             }
         }
 
         window.nextTutorialStep = function() {
-            if (tutorialStep === 1) { tutorialStep = 2; updateTutorialUI(); } 
-            else if (tutorialStep === 5) { document.getElementById('tutorial-panel').classList.add('hidden'); tutorialMode = false; }
+            if (tutorialStep === 1) { 
+                tutorialStep = 2; updateTutorialUI(); 
+            } else if (tutorialStep === 5) { 
+                document.getElementById('tutorial-panel').classList.add('hidden'); 
+                tutorialMode = false; 
+            }
         }
 
         function checkTutorialProgress() {
             if (!tutorialMode) return;
-            if (tutorialStep === 2 && state.stock['Tip-O'] > 5) { tutorialStep = 3; updateTutorialUI(); }
-            if (tutorialStep === 4 && !state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0)) { tutorialStep = 5; updateTutorialUI(); }
+            if (tutorialStep === 2 && state.stock['Tip-O'] > 5) { 
+                tutorialStep = 3; updateTutorialUI(); 
+            }
+            if (tutorialStep === 4 && !state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0)) { 
+                tutorialStep = 5; updateTutorialUI(); 
+            }
         }
 
         btnStart.addEventListener('click', () => {
             startScreen.classList.add('hidden'); uiLayer.classList.remove('hidden');
             gameStarted = true; lastTime = performance.now();
+            
             tutorialMode = true; tutorialStep = 1;
             infectNode(state.nodes.find(n => n.id === 'ankara'), 'Tip-O');
-            updateTutorialUI(); requestFullscreenSafe();
+            updateTutorialUI();
+            requestFullscreenSafe();
         });
 
         toolBtns.forEach(btn => {
@@ -410,7 +455,12 @@
 
         window.produce = function(strain, isAuto = false) {
             if (!gameStarted || state.isGameOver) return;
-            if (tutorialMode && tutorialStep === 2 && strain !== 'Tip-O') { addFloatingText("Öğreticide sadece Tip-O üretin!", canvas.width/2, 120, '#ef4444'); return; }
+            
+            if (tutorialMode && tutorialStep === 2 && strain !== 'Tip-O') {
+                addFloatingText("Öğreticide sadece Tip-O üretin!", canvas.width/2, 120, '#ef4444');
+                return;
+            }
+
             if ((state.money - 100) >= -5000 && state.producingTimer < 0) {
                 state.money -= 100; state.producingStrain = strain; state.producingTimer = 3.0;
                 produceBtns.forEach(b => b.disabled = true);
@@ -421,30 +471,33 @@
         btnUpgrades.onclick = () => { upgradeModal.classList.remove('hidden'); upgradeModal.classList.add('flex'); };
         btnCloseUpgrade.onclick = () => { upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex'); };
 
-        const teamLimit = 6;
         btnBuyTeam.onclick = () => {
-            if(state.maxTeams < teamLimit && (state.money - state.teamCost) >= -5000) {
+            if((state.money - state.teamCost) >= -5000 && state.maxTeams < 6) { // Maksimum 6 Ekip
                 state.money -= state.teamCost; state.maxTeams++; state.teamsAvailable++;
                 state.teamCost = Math.floor(state.teamCost * 1.6);
                 addFloatingText("Yeni Ekip!", canvas.width/2, canvas.height/2, '#4ade80');
                 updateUI();
-                if (tutorialMode && tutorialStep === 3) { tutorialStep = 4; upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex'); updateTutorialUI(); }
+
+                if (tutorialMode && tutorialStep === 3) {
+                    tutorialStep = 4;
+                    upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex');
+                    updateTutorialUI();
+                }
             }
         };
 
-        const autoProdCosts = [5000, 12000];
-        const autoProdLimits = [3, 6];
         btnBuyAutoProd.onclick = () => {
-            if(state.autoProdLevel < 2) {
-                let cost = autoProdCosts[state.autoProdLevel];
-                if ((state.money - cost) >= -5000) {
-                    state.money -= cost;
+            if (state.autoProduceLevel < autoProdLevels.length) {
+                let upgrade = autoProdLevels[state.autoProduceLevel];
+                if ((state.money - upgrade.cost) >= -5000) {
+                    state.money -= upgrade.cost;
                     state.autoProduce = true;
-                    state.autoProdLimit = autoProdLimits[state.autoProdLevel];
-                    state.autoProdLevel++;
+                    state.autoProduceLimit = upgrade.limit;
+                    state.autoProduceLevel++;
                     
-                    if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 30.0; }
-                    addFloatingText(`YZ Üretim Seviye ${state.autoProdLevel}!`, canvas.width/2, canvas.height/2, '#3b82f6');
+                    if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 10.0; }
+                    
+                    addFloatingText(`Sınır: ${upgrade.limit} Doz`, canvas.width/2, canvas.height/2, '#3b82f6'); 
                     updateUI();
                 }
             }
@@ -453,21 +506,33 @@
         btnBuyAutoVac.onclick = () => {
             if(!state.autoVaccine && (state.money - 10000) >= -5000) {
                 state.money -= 10000; state.autoVaccine = true;
-                state.disasterPhase = 2; state.disasterTimer = 30.0 + Math.random() * 20.0;
+                state.disasterPhase = 2; state.disasterTimer = 20.0 + Math.random() * 10.0;
                 btnBuyAutoVac.innerText = "AKTİF"; btnBuyAutoVac.disabled = true; btnBuyAutoVac.classList.add('opacity-50');
                 addFloatingText("YZ Filyasyon Aktif!", canvas.width/2, canvas.height/2, '#a855f7'); updateUI();
             }
         };
 
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction(e); }, {passive: false});
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Ghost click önleme
+            handleInteraction(e);
+        }, {passive: false});
         canvas.addEventListener('mousedown', handleInteraction);
 
         function handleInteraction(e) {
             if(!gameStarted || state.isGameOver) return;
             if(e.target.closest('#ui-layer') || e.target.closest('.modal')) return;
             let cx = e.clientX || (e.touches && e.touches[0].clientX), cy = e.clientY || (e.touches && e.touches[0].clientY);
-            let clickedNode = state.nodes.find(n => Math.hypot(cx - n.x, cy - n.y) <= n.radius + 20);
-            if (clickedNode) applyVaccine(clickedNode, cx, cy);
+            
+            let closestNode = null;
+            let minDist = Infinity;
+            state.nodes.forEach(n => {
+                let dist = Math.hypot(cx - n.x, cy - n.y);
+                if (dist <= n.radius + 20 && dist < minDist) {
+                    closestNode = n; minDist = dist;
+                }
+            });
+
+            if (closestNode) applyVaccine(closestNode, cx, cy);
         }
 
         function applyVaccine(node, cx, cy, isAuto = false) {
@@ -484,7 +549,9 @@
         function infectNode(node, strain) {
             if (node.immunity[strain] > 0 || node.infectedStrains.includes(strain)) return;
             node.infectedStrains.push(strain);
-            if (node.qState < 2 && node.qPendingState < 2) { node.qTimer = 1.5; node.qPendingState = 2; }
+            if (node.qState < 2 && node.qPendingState < 2) {
+                node.qTimer = 1.5; node.qPendingState = 2; 
+            }
             addFloatingText("VAKA!", node.x, node.y - 30, STRAINS[strain].color);
         }
 
@@ -506,8 +573,11 @@
 
         function updateUI() {
             uiMoney.innerText = Math.floor(state.money); 
-            if (state.money < 0) { uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500'); } 
-            else { uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400'); }
+            if (state.money < 0) {
+                uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500');
+            } else {
+                uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400');
+            }
 
             uiDay.innerText = state.day;
             uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
@@ -515,7 +585,9 @@
             
             let income = 0, drain = 0;
             state.nodes.forEach(n => {
-                if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
+                if (n.qState === 2) drain += 20;
+                else if (n.qState === 1) drain += 10;
+                else if (n.infectedStrains.length === 0) income += 5;
             });
             let net = income - drain;
             uiNet.innerText = (net >= 0 ? "+" : "") + net;
@@ -524,11 +596,22 @@
             if (state.producingTimer > 0) produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%';
             else produceBar.style.width = '0%';
             
-            if(state.maxTeams >= teamLimit) { btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50'); } 
-            else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
+            // Yeni Ekip Sınırı
+            if(state.maxTeams >= 6) {
+                btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50');
+            } else { 
+                btnBuyTeam.innerText = `₺${state.teamCost}`; 
+            }
 
-            if(state.autoProdLevel >= 2) { btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50'); } 
-            else if(state.autoProdLevel === 1) { btnBuyAutoProd.innerText = `₺${autoProdCosts[1]}`; }
+            // Otonom Üretim Sınırı (Sadece 2 seviye)
+            if (state.autoProduceLevel >= autoProdLevels.length) {
+                btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50');
+                document.getElementById('auto-prod-desc').innerText = `Seçili aşı stoğu ${state.autoProduceLimit}'nın altına düşerse otomatik üretir.`;
+            } else {
+                let nextUp = autoProdLevels[state.autoProduceLevel];
+                btnBuyAutoProd.innerText = `₺${nextUp.cost}`;
+                document.getElementById('auto-prod-desc').innerText = state.autoProduceLevel > 0 ? `Sınır ${nextUp.limit} doza çıkartılır.` : "Seçili aşı stoğu 3'ün altına düşerse otomatik üretir.";
+            }
         }
 
         function update(dt) {
@@ -540,22 +623,17 @@
                 if (dayTimer >= 2.0) { 
                     state.day++; dayTimer = 0; updateUI(); 
 
-                    // 300. Gün Pasif Felaket Tetikleyicisi
-                    if (state.day === 300 && state.disasterPhase === 0) {
+                    // 200. Gün Pasif Felaket Tetikleyicisi (Eğer otomasyon alınmamışsa)
+                    if (state.day >= 200 && state.disasterPhase === 0) {
                         state.disasterPhase = 1;
-                        state.disasterDelayTimer = 10.0;
+                        state.disasterDelayTimer = 5.0;
                     }
 
                     // 500. Gün Zafer Koşulu
                     if (state.day >= 500 && !state.isGameOver) {
                         state.isGameOver = true;
-                        document.getElementById('game-over-title').innerText = "ZAFER!";
-                        document.getElementById('game-over-title').classList.replace('text-white', 'text-emerald-400');
-                        document.getElementById('game-over-day').innerText = `Tamamlanan Gün: ${state.day}`;
-                        document.getElementById('game-over-day').classList.replace('text-yellow-400', 'text-emerald-300');
-                        document.getElementById('game-over-desc').innerText = "TEBRİKLER! Şap hastalıklarının ilgili suşları ülke çapında başarıyla eradike edildi.";
-                        document.getElementById('game-over-desc').classList.replace('text-red-200', 'text-emerald-200');
-                        gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
+                        document.getElementById('victory-screen').classList.remove('hidden');
+                        document.getElementById('victory-screen').classList.add('flex');
                     }
                 }
 
@@ -563,15 +641,22 @@
                 if (economyTimer >= 1.0) { 
                     let income = 0, drain = 0;
                     state.nodes.forEach(n => {
-                        if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
-                        STRAIN_ORDER.forEach(s => { if (n.immunity[s] > 0) { n.immunity[s] -= 1; if (n.immunity[s] <= 0) addFloatingText(`Koruma Bitti (${s})`, n.x, n.y+30, '#94a3b8'); } });
+                        if (n.qState === 2) drain += 20; 
+                        else if (n.qState === 1) drain += 10;
+                        else if (n.infectedStrains.length === 0) income += 5;
+                        
+                        STRAIN_ORDER.forEach(s => {
+                            if (n.immunity[s] > 0) {
+                                n.immunity[s] -= 1;
+                                if (n.immunity[s] <= 0) addFloatingText(`Koruma Bitti (${s})`, n.x, n.y+30, '#94a3b8');
+                            }
+                        });
                     });
                     state.money += (income - drain); updateUI(); economyTimer = 0;
                     
-                    // İflas Koşulu
                     if(state.money <= -5000 && !state.isGameOver) { 
                         state.isGameOver = true; 
-                        document.getElementById('game-over-day').innerText = `Dayanılan Gün: ${state.day}`;
+                        document.getElementById('endDay').innerText = state.day;
                         gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
                     }
                 }
@@ -585,19 +670,21 @@
                     updateUI();
                 }
 
+                // Felaket Zamanlayıcıları (Süreler oyun içi günlere uygun hale getirildi)
                 if (state.disasterPhase === 1) {
                     if (state.disasterDelayTimer > 0) {
                         state.disasterDelayTimer -= dt;
-                        if (state.disasterDelayTimer <= 0) state.disasterTimer = 60.0 + Math.random() * 40.0;
+                        if (state.disasterDelayTimer <= 0) state.disasterTimer = 20.0 + Math.random() * 10.0;
                     } else {
                         state.disasterTimer -= dt;
-                        if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 90.0 + Math.random() * 60.0; }
+                        if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 40.0 + Math.random() * 20.0; }
                     }
                 } else if (state.disasterPhase === 2) {
                     state.disasterTimer -= dt;
-                    if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 40.0 + Math.random() * 30.0; }
+                    if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 25.0 + Math.random() * 15.0; }
                 }
 
+                // Normal Hastalık Çıkışı
                 outbreakTimer -= dt;
                 if (outbreakTimer <= 0) {
                     let vuln = state.nodes.filter(n => n.qState === 0 && n.infectedStrains.length === 0);
@@ -608,11 +695,12 @@
                         infectNode(randNode, randStrain);
                     }
                     
-                    let base = 16.0, variance = 4.0;
-                    if (state.day >= 400) { base = 4.0; variance = 2.0; } 
-                    else if (state.day >= 200) { base = 6.0; variance = 2.0; } 
-                    else if (state.day >= 100) { base = 8.0; variance = 4.0; } 
-                    else if (state.day >= 40) { base = 12.0; variance = 4.0; } 
+                    let base = 16.0, variance = 4.0; 
+                    if (state.day >= 400) { base = 4.0; variance = 2.0; }
+                    else if (state.day >= 200) { base = 6.0; variance = 2.0; }
+                    else if (state.day >= 100) { base = 8.0; variance = 4.0; }
+                    else if (state.day >= 40) { base = 12.0; variance = 4.0; }
+                    else { base = 16.0; variance = 4.0; } 
                     
                     outbreakTimer = base + Math.random() * variance; 
                 }
@@ -633,7 +721,7 @@
                 }
             }
 
-            if (state.autoProduce && state.stock[state.activeTool] < state.autoProdLimit && state.producingTimer < 0 && (state.money - 100) >= -5000) {
+            if (state.autoProduce && state.stock[state.activeTool] < state.autoProduceLimit && state.producingTimer < 0 && (state.money - 100) >= -5000) {
                 produce(state.activeTool, true);
             }
 
