@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -15,30 +14,50 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100dvh; background-color: #030712; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; font-family: 'Inter', sans-serif; color: #f8fafc; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100dvh;
+            background-color: #030712;
+            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+            overscroll-behavior: none;
+            font-family: 'Inter', sans-serif; color: #f8fafc;
+        }
         #gameCanvas { display: block; width: 100%; height: 100%; }
-        .glass-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
         .tool-btn { transition: all 0.15s; border: 2px solid transparent; opacity: 0.4; }
-        .tool-btn.active { opacity: 1; transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); background-color: rgba(255, 255, 255, 0.1); }
-        .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none; z-index: 5; }
+        .tool-btn.active {
+            opacity: 1; transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 5;
+        }
         .produce-btn { transition: background-color 0.2s; }
         .produce-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        @keyframes flashRed { 0% { background-color: rgba(239, 68, 68, 0.8); } 100% { background-color: rgba(239, 68, 68, 0); } }
+        
+        @keyframes flashRed {
+            0% { background-color: rgba(239, 68, 68, 0.8); }
+            100% { background-color: rgba(239, 68, 68, 0); }
+        }
         .flash-anim { animation: flashRed 3s ease-out forwards; }
     </style>
 </head>
 <body>
+
     <canvas id="gameCanvas"></canvas>
     <div class="scanlines"></div>
 
+    <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="fixed inset-0 bg-slate-950 z-[200] flex flex-col items-center justify-center p-4">
         
-        <button onclick="clearCacheAndReload()" class="absolute bottom-10 bg-slate-800/80 text-white text-[10px] px-3 py-1.5 rounded border border-slate-600 hover:bg-slate-700 shadow flex items-center gap-1 active:scale-95 transition pointer-events-auto">
-            <span class="text-xs">🔄</span> Sürümü Güncelle (Önbelleği Temizle)
-        </button>
-
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-center tracking-tighter">ŞAP SALGINI: OPERASYON</h1>
-        <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-8 overflow-y-auto max-h-[60vh]">
+        
+        <div class="glass-panel p-6 rounded-2xl max-w-3xl text-slate-300 text-sm sm:text-base flex flex-col gap-4 mb-6 overflow-y-auto max-h-[55vh]">
             <p><strong class="text-white">GÖREV:</strong> Ülke çapında yayılan mutasyonları durdur! 500. güne ulaşarak salgını tamamen eradike et.</p>
             <ul class="list-disc pl-5 flex flex-col gap-2">
                 <li><strong class="text-red-400">MİHRAK VE TEDBİR:</strong> Hastalık çıkan il <strong class="text-red-500">Kırmızı (Mihrak)</strong> kordona alınır. Komşuları <strong class="text-yellow-500">Sarı (Tedbir)</strong> kordona girer.</li>
@@ -48,9 +67,22 @@
                 <li><strong class="text-red-500">İFLAS DURUMU:</strong> Bütçe <strong class="text-red-600">-₺5000</strong>'ye düşerse iflas edersiniz!</li>
             </ul>
         </div>
-        <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95 mb-10">BAŞLA (TAM EKRAN)</button>
         
-        <div class="absolute bottom-3 text-[10px] text-slate-500 font-bold tracking-wide pointer-events-none">© 2026 Muğla İl Tarım ve Orman Müdürlüğü</div>
+        <!-- Butonları Saran Flex Konteyner -->
+        <div class="flex flex-col items-center gap-4 mb-8">
+            <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95">
+                BAŞLA (TAM EKRAN)
+            </button>
+            
+            <button onclick="clearCacheAndReload()" class="bg-slate-800/80 text-white text-[10px] px-4 py-2 rounded border border-slate-600 hover:bg-slate-700 shadow flex items-center gap-2 active:scale-95 transition pointer-events-auto">
+                <span class="text-xs">🔄</span> Sürümü Güncelle (Önbelleği Temizle)
+            </button>
+        </div>
+        
+        <!-- Yaratıcı İmzası -->
+        <div class="absolute bottom-4 text-[10px] text-slate-500/70 font-bold tracking-widest pointer-events-none text-center w-full">
+            © 2026 Muğla İl Tarım ve Orman Müdürlüğü
+        </div>
     </div>
 
     <div id="disaster-flash" class="fixed inset-0 z-[150] pointer-events-none hidden flex items-center justify-center">
@@ -59,6 +91,7 @@
 
     <!-- UI Overlay -->
     <div id="ui-layer" class="absolute inset-0 pointer-events-none p-2 sm:p-4 flex flex-col justify-between z-10 hidden">
+        
         <div class="flex justify-between items-start gap-2">
             <div class="flex flex-col gap-2 pointer-events-none">
                 <div class="glass-panel p-2 sm:p-3 rounded-2xl pointer-events-auto flex items-center gap-3 sm:gap-5 shadow-lg">
@@ -77,6 +110,7 @@
                     </div>
                 </div>
                 
+                <!-- Şap Enstitüsü -->
                 <div class="glass-panel p-2 rounded-xl flex flex-col gap-1 shadow-lg w-[260px] sm:w-[320px] pointer-events-auto">
                     <div class="text-[9px] sm:text-[10px] text-blue-300 font-bold tracking-widest text-center border-b border-slate-600 pb-1 mb-1">ŞAP ENSTİTÜSÜ (₺100)</div>
                     <div class="flex flex-row justify-between items-center gap-1">
@@ -122,6 +156,7 @@
             <button id="tutorial-btn" onclick="nextTutorialStep()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-6 rounded-lg text-xs shadow-lg active:scale-95 transition hidden mx-auto">DEVAM ET</button>
         </div>
 
+        <!-- Alt Menü (Araçlar) -->
         <div class="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 w-[98%] max-w-xl pb-2">
             <div class="text-[10px] sm:text-xs text-blue-200 font-bold mb-1 ml-2 drop-shadow-md">
                 🚐 Saha Ekipleri: <span id="ui-teams" class="text-white">1</span> / <span id="ui-max-teams">1</span> (Uygulama: 2sn)
@@ -160,26 +195,35 @@
             </div>
             <div class="p-4 flex flex-col gap-3 overflow-y-auto">
                 <p class="text-[10px] sm:text-xs text-slate-300">Yapay Zeka ve Lojistik ağınızı kurun.</p>
+                
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-emerald-400 text-sm">Yeni Ekip Aracı</h3>
                         <p class="text-[10px] text-slate-400">Aşı kapasitesini artırır. Maksimum 6 Ekip.</p>
                     </div>
-                    <button id="btn-buy-team" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">₺800</button>
+                    <button id="btn-buy-team" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺800
+                    </button>
                 </div>
+
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-blue-400 text-sm">Otonom Üretim (Y.Z.)</h3>
                         <p class="text-[10px] text-slate-400">Seçili aşıyı otomatik üretir. Limit kademeli artar.</p>
                     </div>
-                    <button id="btn-buy-auto-prod" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">₺5000</button>
+                    <button id="btn-buy-auto-prod" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺5000
+                    </button>
                 </div>
+
                 <div class="bg-slate-800 p-3 rounded-xl border border-slate-600 flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-purple-400 text-sm">Otonom Filyasyon (Y.Z.)</h3>
                         <p class="text-[10px] text-slate-400">Boş ekipler, seçili aşının hastalarına otomatik müdahale eder.</p>
                     </div>
-                    <button id="btn-buy-auto-vac" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">₺10000</button>
+                    <button id="btn-buy-auto-vac" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow-lg active:scale-95 shrink-0 transition">
+                        ₺10000
+                    </button>
                 </div>
             </div>
         </div>
@@ -238,37 +282,63 @@
         let outbreakTimer = 18.0, spoilageTimer = 30.0; 
 
         const MAP_DATA = [
-            { id: 'edirne', name: 'Edirne', px: 0.08, py: 0.22 }, { id: 'istanbul', name: 'İstanbul', px: 0.20, py: 0.25 },
-            { id: 'bursa', name: 'Bursa', px: 0.20, py: 0.35 }, { id: 'izmir', name: 'İzmir', px: 0.08, py: 0.55 },
-            { id: 'mugla', name: 'Muğla', px: 0.15, py: 0.75 }, { id: 'antalya', name: 'Antalya', px: 0.30, py: 0.82 },
-            { id: 'konya', name: 'Konya', px: 0.40, py: 0.65 }, { id: 'ankara', name: 'Ankara', px: 0.42, py: 0.42 },
-            { id: 'kayseri', name: 'Kayseri', px: 0.55, py: 0.55 }, { id: 'sivas', name: 'Sivas', px: 0.65, py: 0.45 },
-            { id: 'samsun', name: 'Samsun', px: 0.58, py: 0.20 }, { id: 'trabzon', name: 'Trabzon', px: 0.78, py: 0.22 },
-            { id: 'erzurum', name: 'Erzurum', px: 0.85, py: 0.35 }, { id: 'kars', name: 'Kars', px: 0.92, py: 0.25 },
-            { id: 'van', name: 'Van', px: 0.92, py: 0.65 }, { id: 'diyarbakir', name: 'Diyarbakır', px: 0.80, py: 0.70 },
-            { id: 'malatya', name: 'Malatya', px: 0.70, py: 0.60 }, { id: 'gaziantep', name: 'Gaziantep', px: 0.65, py: 0.80 },
-            { id: 'adana', name: 'Adana', px: 0.55, py: 0.80 }, { id: 'hatay', name: 'Hatay', px: 0.60, py: 0.92 }
+            { id: 'edirne', name: 'Edirne', px: 0.08, py: 0.22 },
+            { id: 'istanbul', name: 'İstanbul', px: 0.20, py: 0.25 },
+            { id: 'bursa', name: 'Bursa', px: 0.20, py: 0.35 },
+            { id: 'izmir', name: 'İzmir', px: 0.08, py: 0.55 },
+            { id: 'mugla', name: 'Muğla', px: 0.15, py: 0.75 },
+            { id: 'antalya', name: 'Antalya', px: 0.30, py: 0.82 },
+            { id: 'konya', name: 'Konya', px: 0.40, py: 0.65 },
+            { id: 'ankara', name: 'Ankara', px: 0.42, py: 0.42 },
+            { id: 'kayseri', name: 'Kayseri', px: 0.55, py: 0.55 },
+            { id: 'sivas', name: 'Sivas', px: 0.65, py: 0.45 },
+            { id: 'samsun', name: 'Samsun', px: 0.58, py: 0.20 },
+            { id: 'trabzon', name: 'Trabzon', px: 0.78, py: 0.22 },
+            { id: 'erzurum', name: 'Erzurum', px: 0.85, py: 0.35 },
+            { id: 'kars', name: 'Kars', px: 0.92, py: 0.25 },
+            { id: 'van', name: 'Van', px: 0.92, py: 0.65 },
+            { id: 'diyarbakir', name: 'Diyarbakır', px: 0.80, py: 0.70 },
+            { id: 'malatya', name: 'Malatya', px: 0.70, py: 0.60 },
+            { id: 'gaziantep', name: 'Gaziantep', px: 0.65, py: 0.80 },
+            { id: 'adana', name: 'Adana', px: 0.55, py: 0.80 },
+            { id: 'hatay', name: 'Hatay', px: 0.60, py: 0.92 }
         ];
 
         const EDGES_DATA = [
             ['edirne', 'istanbul'], ['istanbul', 'bursa'], ['istanbul', 'izmir'], ['istanbul', 'ankara'],
-            ['bursa', 'izmir'], ['bursa', 'ankara'], ['izmir', 'mugla'], ['izmir', 'konya'], ['mugla', 'antalya'],
-            ['antalya', 'konya'], ['antalya', 'adana'], ['konya', 'ankara'], ['konya', 'kayseri'], ['konya', 'adana'],
-            ['ankara', 'samsun'], ['ankara', 'kayseri'], ['ankara', 'sivas'], ['samsun', 'trabzon'], ['samsun', 'sivas'],
-            ['kayseri', 'sivas'], ['kayseri', 'adana'], ['kayseri', 'malatya'], ['adana', 'gaziantep'], ['adana', 'hatay'],
-            ['hatay', 'gaziantep'], ['gaziantep', 'malatya'], ['gaziantep', 'diyarbakir'], ['malatya', 'sivas'], 
-            ['malatya', 'diyarbakir'], ['malatya', 'erzurum'], ['sivas', 'trabzon'], ['sivas', 'erzurum'],
-            ['trabzon', 'erzurum'], ['trabzon', 'kars'], ['erzurum', 'kars'], ['erzurum', 'van'], ['erzurum', 'diyarbakir'],
-            ['diyarbakir', 'van'], ['kars', 'van']
+            ['bursa', 'izmir'], ['bursa', 'ankara'],
+            ['izmir', 'mugla'], ['izmir', 'konya'],
+            ['mugla', 'antalya'],
+            ['antalya', 'konya'], ['antalya', 'adana'],
+            ['konya', 'ankara'], ['konya', 'kayseri'], ['konya', 'adana'],
+            ['ankara', 'samsun'], ['ankara', 'kayseri'], ['ankara', 'sivas'],
+            ['samsun', 'trabzon'], ['samsun', 'sivas'],
+            ['kayseri', 'sivas'], ['kayseri', 'adana'], ['kayseri', 'malatya'],
+            ['adana', 'gaziantep'], ['adana', 'hatay'],
+            ['hatay', 'gaziantep'],
+            ['gaziantep', 'malatya'], ['gaziantep', 'diyarbakir'],
+            ['malatya', 'sivas'], ['malatya', 'diyarbakir'], ['malatya', 'erzurum'],
+            ['sivas', 'trabzon'], ['sivas', 'erzurum'],
+            ['trabzon', 'erzurum'], ['trabzon', 'kars'],
+            ['erzurum', 'kars'], ['erzurum', 'van'], ['erzurum', 'diyarbakir'],
+            ['diyarbakir', 'van'],
+            ['kars', 'van']
         ];
 
         function initMap() {
             state.nodes = MAP_DATA.map(n => ({
-                ...n, x: 0, y: 0, radius: 14, infectedStrains: [], immunity: { 'Tip-O':0, 'Tip-A':0, 'Asia-1':0, 'SAT-2':0, 'Tip-C':0 },
-                qState: 0, qPendingState: 0, qTimer: -1, quarantinedBy: new Set(), threatStrains: new Set(), yellowLocked: false,
+                ...n, x: 0, y: 0, radius: 14,
+                infectedStrains: [], immunity: { 'Tip-O':0, 'Tip-A':0, 'Asia-1':0, 'SAT-2':0, 'Tip-C':0 },
+                qState: 0, qPendingState: 0, qTimer: -1,
+                quarantinedBy: new Set(), threatStrains: new Set(), yellowLocked: false,
                 vaccinatingTimer: -1, vaccinatingStrain: null
             }));
-            state.edges = EDGES_DATA.map(e => ({ from: state.nodes.find(n => n.id === e[0]), to: state.nodes.find(n => n.id === e[1]) }));
+
+            state.edges = EDGES_DATA.map(e => ({
+                from: state.nodes.find(n => n.id === e[0]),
+                to: state.nodes.find(n => n.id === e[1])
+            }));
+
             state.nodes.forEach(n => {
                 n.connectedNodes = [];
                 EDGES_DATA.forEach(e => {
@@ -294,27 +364,44 @@
             } catch(e) { }
         }
 
+        // --- ÖĞRETİCİ SİSTEMİ ---
         function updateTutorialUI() {
             const panel = document.getElementById('tutorial-panel'), title = document.getElementById('tutorial-title'), text = document.getElementById('tutorial-text'), btn = document.getElementById('tutorial-btn');
             if(!panel) return;
             panel.classList.remove('hidden'); btn.classList.add('hidden');
 
             if (tutorialStep === 1) {
-                title.innerText = "ÖĞRETİCİ (1/5): MİHRAK VE KORDON"; text.innerText = "Ankara'da Tip-O hastalığı patlak verdi (Kırmızı). Çevresine 'Tedbir Karantinası' (Sarı) çekildi. Bütçe ve zaman şu an donduruldu."; btn.innerText = "DEVAM ET"; btn.classList.remove('hidden');
+                title.innerText = "ÖĞRETİCİ (1/5): MİHRAK VE KORDON";
+                text.innerText = "Ankara'da Tip-O hastalığı patlak verdi (Kırmızı). Çevresine 'Tedbir Karantinası' (Sarı) çekildi. Bütçe ve zaman şu an donduruldu.";
+                btn.innerText = "DEVAM ET"; btn.classList.remove('hidden');
             } else if (tutorialStep === 2) {
-                title.innerText = "AŞI ÜRETİMİ (2/5)"; text.innerText = "Sol üstteki Şap Enstitüsü'nden Tip-O (O) butonuna basarak aşı üretin. (Oyun aşı üretilince devam edecek)";
+                title.innerText = "AŞI ÜRETİMİ (2/5)";
+                text.innerText = "Sol üstteki Şap Enstitüsü'nden Tip-O (O) butonuna basarak aşı üretin. (Oyun aşı üretilince devam edecek)";
             } else if (tutorialStep === 3) {
-                title.innerText = "LOJİSTİK DESTEK (3/5)"; text.innerText = "Tek ekiple baş edemezsiniz. Sağ üstten AR-GE/MARKET'i açın ve 'Yeni Ekip Aracı' satın alın.";
+                title.innerText = "LOJİSTİK DESTEK (3/5)";
+                text.innerText = "Tek ekiple baş edemezsiniz. Sağ üstten AR-GE/MARKET'i açın ve 'Yeni Ekip Aracı' satın alın.";
             } else if (tutorialStep === 4) {
-                title.innerText = "SAHA MÜDAHALESİ (4/5)"; text.innerText = "Aşınız hazır! Alt menüden Tip-O seçiliyken, kırmızı ve sarı illere tıklayın.\n\nDİKKAT: Sadece sarıları aşılamak yetmez, kırmızı mihrakı kesinlikle aşılamalısın!";
+                title.innerText = "SAHA MÜDAHALESİ (4/5)";
+                text.innerText = "Aşınız hazır! Alt menüden Tip-O seçiliyken, kırmızı ve sarı illere tıklayın.\n\nDİKKAT: Sadece sarıları aşılamak yetmez, kırmızı mihrakı kesinlikle aşılamalısın! (Aşı biterse tekrar üretebilirsiniz)";
             } else if (tutorialStep === 5) {
-                title.innerText = "SERBEST MOD (5/5)"; text.innerText = "Tebrikler! Salgını bastırdınız. Gerçek zaman, bütçe zayiatı ve rastgele salgınlar akmaya başlıyor. Başarılar!"; btn.innerText = "OYUNA DÖN"; btn.classList.remove('hidden');
+                title.innerText = "SERBEST MOD (5/5)";
+                text.innerText = "Tebrikler! Salgını bastırdınız. Gerçek zaman, bütçe zayiatı ve rastgele salgınlar akmaya başlıyor. Başarılar!";
+                btn.innerText = "OYUNA DÖN"; btn.classList.remove('hidden');
             }
         }
 
         window.nextTutorialStep = function() {
             if (tutorialStep === 1) { tutorialStep = 2; updateTutorialUI(); } 
             else if (tutorialStep === 5) { document.getElementById('tutorial-panel').classList.add('hidden'); tutorialMode = false; }
+        }
+
+        function checkTutorialProgress() {
+            if (!tutorialMode) return;
+            if (tutorialStep === 2 && state.stock['Tip-O'] > 5) { tutorialStep = 3; updateTutorialUI(); }
+            // 4. Adım Kontrolü (Tüm hastalıkların ve karantinaların temizlenip temizlenmediğini kontrol et)
+            if (tutorialStep === 4 && !state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0)) { 
+                tutorialStep = 5; updateTutorialUI(); 
+            }
         }
 
         btnStart.addEventListener('click', () => {
@@ -356,21 +443,28 @@
             }
         };
 
-        const autoProdCosts = [5000, 12000]; const autoProdLimits = [3, 6];
+        const autoProdCosts = [5000, 12000];
+        const autoProdLimits = [3, 6];
         btnBuyAutoProd.onclick = () => {
             if(state.autoProdLevel < 2) {
                 let cost = autoProdCosts[state.autoProdLevel];
                 if ((state.money - cost) >= -5000) {
-                    state.money -= cost; state.autoProduce = true; state.autoProdLimit = autoProdLimits[state.autoProdLevel]; state.autoProdLevel++;
+                    state.money -= cost;
+                    state.autoProduce = true;
+                    state.autoProdLimit = autoProdLimits[state.autoProdLevel];
+                    state.autoProdLevel++;
+                    
                     if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 30.0; }
-                    addFloatingText(`YZ Üretim Seviye ${state.autoProdLevel}!`, canvas.width/2, canvas.height/2, '#3b82f6'); updateUI();
+                    addFloatingText(`YZ Üretim Seviye ${state.autoProdLevel}!`, canvas.width/2, canvas.height/2, '#3b82f6');
+                    updateUI();
                 }
             }
         };
 
         btnBuyAutoVac.onclick = () => {
             if(!state.autoVaccine && (state.money - 10000) >= -5000) {
-                state.money -= 10000; state.autoVaccine = true; state.disasterPhase = 2; state.disasterTimer = 30.0 + Math.random() * 20.0;
+                state.money -= 10000; state.autoVaccine = true;
+                state.disasterPhase = 2; state.disasterTimer = 30.0 + Math.random() * 20.0;
                 btnBuyAutoVac.innerText = "AKTİF"; btnBuyAutoVac.disabled = true; btnBuyAutoVac.classList.add('opacity-50');
                 addFloatingText("YZ Filyasyon Aktif!", canvas.width/2, canvas.height/2, '#a855f7'); updateUI();
             }
@@ -387,8 +481,15 @@
             if (clickedNode) applyVaccine(clickedNode, cx, cy);
         }
 
-        // Restriction removed: vaccines can now be wasted on empty nodes just like the original user file
         function applyVaccine(node, cx, cy, isAuto = false) {
+            // Güvenlik Kontrolü: Hastalık yoksa ve tehdit altında da değilse boş yere aşı harcatma
+            let needsVaccine = node.infectedStrains.includes(state.activeTool) || (node.qState === 1 && node.yellowLocked && Array.from(node.threatStrains).includes(state.activeTool));
+            
+            if (!needsVaccine) {
+                if(!isAuto) addFloatingText("Gereksiz!", cx, cy, '#64748b');
+                return;
+            }
+
             if (node.vaccinatingTimer > 0) { if(!isAuto) addFloatingText("Aşılanıyor!", cx, cy, '#94a3b8'); return; }
             if (state.stock[state.activeTool] <= 0) { if(!isAuto) addFloatingText("STOK YOK!", cx, cy, '#ef4444'); return; }
             if (state.teamsAvailable <= 0) { if(!isAuto) addFloatingText("EKİP YOK!", cx, cy, '#ef4444'); return; }
@@ -427,16 +528,26 @@
             if (state.money < 0) { uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500'); } 
             else { uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400'); }
 
-            uiDay.innerText = state.day; uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
+            uiDay.innerText = state.day;
+            uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
             STRAIN_ORDER.forEach(s => { uiStocks[s].innerText = state.stock[s]; });
             
             let income = 0, drain = 0;
-            state.nodes.forEach(n => { if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5; });
-            let net = income - drain; uiNet.innerText = (net >= 0 ? "+" : "") + net; uiNet.className = "text-xs sm:text-sm font-bold " + (net >= 0 ? "text-emerald-400" : "text-red-500");
+            state.nodes.forEach(n => {
+                if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
+            });
+            let net = income - drain;
+            uiNet.innerText = (net >= 0 ? "+" : "") + net;
+            uiNet.className = "text-xs sm:text-sm font-bold " + (net >= 0 ? "text-emerald-400" : "text-red-500");
             
-            if (state.producingTimer > 0) produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%'; else produceBar.style.width = '0%';
-            if(state.maxTeams >= teamLimit) { btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50'); } else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
-            if(state.autoProdLevel >= 2) { btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50'); } else if(state.autoProdLevel === 1) { btnBuyAutoProd.innerText = `₺${autoProdCosts[1]}`; }
+            if (state.producingTimer > 0) produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%';
+            else produceBar.style.width = '0%';
+            
+            if(state.maxTeams >= teamLimit) { btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50'); } 
+            else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
+
+            if(state.autoProdLevel >= 2) { btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50'); } 
+            else if(state.autoProdLevel === 1) { btnBuyAutoProd.innerText = `₺${autoProdCosts[1]}`; }
         }
 
         function update(dt) {
@@ -448,12 +559,21 @@
                 if (dayTimer >= 2.0) { 
                     state.day++; dayTimer = 0; updateUI(); 
 
-                    if (state.day === 300 && state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 10.0; }
+                    // 300. Gün Pasif Felaket Tetikleyicisi
+                    if (state.day === 300 && state.disasterPhase === 0) {
+                        state.disasterPhase = 1;
+                        state.disasterDelayTimer = 10.0;
+                    }
+
+                    // 500. Gün Zafer Koşulu
                     if (state.day >= 500 && !state.isGameOver) {
                         state.isGameOver = true;
-                        document.getElementById('game-over-title').innerText = "ZAFER!"; document.getElementById('game-over-title').classList.replace('text-white', 'text-emerald-400');
-                        document.getElementById('game-over-day').innerText = `Tamamlanan Gün: ${state.day}`; document.getElementById('game-over-day').classList.replace('text-yellow-400', 'text-emerald-300');
-                        document.getElementById('game-over-desc').innerText = "TEBRİKLER! Şap hastalıklarının ilgili suşları ülke çapında başarıyla eradike edildi."; document.getElementById('game-over-desc').classList.replace('text-red-200', 'text-emerald-200');
+                        document.getElementById('game-over-title').innerText = "ZAFER!";
+                        document.getElementById('game-over-title').classList.replace('text-white', 'text-emerald-400');
+                        document.getElementById('game-over-day').innerText = `Tamamlanan Gün: ${state.day}`;
+                        document.getElementById('game-over-day').classList.replace('text-yellow-400', 'text-emerald-300');
+                        document.getElementById('game-over-desc').innerText = "TEBRİKLER! Şap hastalıklarının ilgili suşları ülke çapında başarıyla eradike edildi.";
+                        document.getElementById('game-over-desc').classList.replace('text-red-200', 'text-emerald-200');
                         gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
                     }
                 }
@@ -467,8 +587,10 @@
                     });
                     state.money += (income - drain); updateUI(); economyTimer = 0;
                     
+                    // İflas Koşulu
                     if(state.money <= -5000 && !state.isGameOver) { 
-                        state.isGameOver = true; document.getElementById('game-over-day').innerText = `Dayanılan Gün: ${state.day}`;
+                        state.isGameOver = true; 
+                        document.getElementById('game-over-day').innerText = `Dayanılan Gün: ${state.day}`;
                         gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
                     }
                 }
@@ -478,14 +600,21 @@
                     let spoiled = false;
                     STRAIN_ORDER.forEach(s => { if (state.stock[s] > 10) { state.stock[s]--; spoiled = true; } });
                     if(spoiled) addFloatingText("Stok Zayi Oldu!", canvas.width/2, 120, '#ef4444');
-                    spoilageTimer = 30.0 + Math.random() * 10.0; updateUI();
+                    spoilageTimer = 30.0 + Math.random() * 10.0;
+                    updateUI();
                 }
 
                 if (state.disasterPhase === 1) {
-                    if (state.disasterDelayTimer > 0) { state.disasterDelayTimer -= dt; if (state.disasterDelayTimer <= 0) state.disasterTimer = 60.0 + Math.random() * 40.0; } 
-                    else { state.disasterTimer -= dt; if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 90.0 + Math.random() * 60.0; } }
+                    if (state.disasterDelayTimer > 0) {
+                        state.disasterDelayTimer -= dt;
+                        if (state.disasterDelayTimer <= 0) state.disasterTimer = 30.0 + Math.random() * 20.0;
+                    } else {
+                        state.disasterTimer -= dt;
+                        if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 60.0 + Math.random() * 40.0; }
+                    }
                 } else if (state.disasterPhase === 2) {
-                    state.disasterTimer -= dt; if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 40.0 + Math.random() * 30.0; }
+                    state.disasterTimer -= dt;
+                    if (state.disasterTimer <= 0) { triggerDisaster(); state.disasterTimer = 30.0 + Math.random() * 20.0; }
                 }
 
                 outbreakTimer -= dt;
@@ -494,11 +623,16 @@
                     if(vuln.length > 0) {
                         let randNode = vuln[Math.floor(Math.random() * vuln.length)];
                         let maxIdx = Math.min(STRAIN_ORDER.length - 1, Math.floor(state.day / 20)); 
-                        let randStrain = STRAIN_ORDER[Math.floor(Math.random() * (maxIdx + 1))]; infectNode(randNode, randStrain);
+                        let randStrain = STRAIN_ORDER[Math.floor(Math.random() * (maxIdx + 1))];
+                        infectNode(randNode, randStrain);
                     }
                     
                     let base = 16.0, variance = 4.0;
-                    if (state.day >= 400) { base = 4.0; variance = 2.0; } else if (state.day >= 200) { base = 6.0; variance = 2.0; } else if (state.day >= 100) { base = 8.0; variance = 4.0; } else if (state.day >= 40) { base = 12.0; variance = 4.0; } 
+                    if (state.day >= 400) { base = 4.0; variance = 2.0; } 
+                    else if (state.day >= 200) { base = 6.0; variance = 2.0; } 
+                    else if (state.day >= 100) { base = 8.0; variance = 4.0; } 
+                    else if (state.day >= 40) { base = 12.0; variance = 4.0; } 
+                    
                     outbreakTimer = base + Math.random() * variance; 
                 }
                 
@@ -518,7 +652,9 @@
                 }
             }
 
-            if (state.autoProduce && state.stock[state.activeTool] < state.autoProdLimit && state.producingTimer < 0 && (state.money - 100) >= -5000) { produce(state.activeTool, true); }
+            if (state.autoProduce && state.stock[state.activeTool] < state.autoProdLimit && state.producingTimer < 0 && (state.money - 100) >= -5000) {
+                produce(state.activeTool, true);
+            }
 
             if (state.autoVaccine && state.teamsAvailable > 0 && state.stock[state.activeTool] > 0) {
                 let target = state.nodes.find(n => n.vaccinatingTimer <= 0 && n.infectedStrains.includes(state.activeTool));
@@ -532,19 +668,8 @@
                     state.stock[state.producingStrain] += 3; state.producingTimer = -1;
                     produceBtns.forEach(b => b.disabled = false);
                     addFloatingText("+3 Doz", canvas.width-50, 80, STRAINS[state.producingStrain].color);
-                    updateUI(); 
-
-                    if (tutorialMode && tutorialStep === 2 && state.producingStrain === 'Tip-O') {
-                        tutorialStep = 3; updateTutorialUI();
-                    }
+                    updateUI(); checkTutorialProgress();
                 }
-            }
-
-            // Move this check to the end of update to ensure step 5 isn't missed
-            if (tutorialMode && tutorialStep === 4) {
-                let remainingThreats = state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0);
-                let activeVaccinations = state.nodes.some(n => n.vaccinatingTimer > 0);
-                if (!remainingThreats && !activeVaccinations) { tutorialStep = 5; updateTutorialUI(); }
             }
 
             state.nodes.forEach(n => {
@@ -591,6 +716,8 @@
                             addFloatingText("Mihrak Çözüldü", n.x, n.y+20, '#4ade80');
                         }
                         updateUI();
+                        // Serbest moda geçerken güncelleme de buraya eklendi
+                        checkTutorialProgress(); 
                     }
                 }
 
@@ -599,6 +726,7 @@
                         n.qState = 0; n.threatStrains.clear();
                         addFloatingText("Tedbir Kalktı", n.x, n.y+20, '#4ade80');
                         updateUI();
+                        checkTutorialProgress();
                     }
                 }
             });
