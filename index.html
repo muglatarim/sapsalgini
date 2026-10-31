@@ -85,7 +85,7 @@
         </div>
 
         <!-- Öğretici Paneli (Alt Kısım) -->
-        <div id="tutorialPanel" class="hidden pointer-events-auto mb-10 w-full max-w-lg mx-auto glass-panel border-blue-500 border-2 p-4 text-center">
+        <div id="tutorialPanel" class="hidden pointer-events-auto mb-10 w-full max-w-lg mx-auto glass-panel border-blue-500 border-2 p-4 text-center shadow-lg">
             <h3 class="text-blue-400 font-bold text-lg mb-2" id="tutorialTitle">ÖĞRETİCİ (1/5)</h3>
             <p class="text-gray-200 text-sm mb-4" id="tutorialText">Bilgi metni...</p>
             <button id="tutorialBtn" onclick="nextTutorialStep()" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded hidden">ANLADIM</button>
@@ -107,7 +107,7 @@
         <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-white">AR-GE & MARKET</h2>
-                <button onclick="toggleMarket()" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+                <button onclick="toggleMarket(true)" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
             </div>
             
             <div class="space-y-4">
@@ -149,15 +149,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // --- TAM EKRAN VE TEMEL AYARLAR ---
-        function requestFullScreen() {
-            let docElm = document.documentElement;
-            if (docElm.requestFullscreen) docElm.requestFullscreen();
-            else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
-            else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
-            else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
-        }
-
+        // --- TEMEL AYARLAR ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -169,7 +161,6 @@
         let isGameOver = false;
         let budget = 3000;
         let day = 1;
-        let timeAcc = 0;
         let totalTeams = 1;
         let availableTeams = 1;
         let nextTeamCost = 800;
@@ -188,7 +179,7 @@
         };
         const vaccineStock = { 'O': 0, 'A': 0, 'Asia-1': 0, 'SAT-2': 0, 'C': 0 };
 
-        // 20 İllik Coğrafi Harita (X, Y 0-1 arası oransal değerler)
+        // Harita Noktaları (iller)
         const nodes = [
             { id: 0, name: "Edirne", x: 0.1, y: 0.2, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
             { id: 1, name: "İstanbul", x: 0.25, y: 0.25, state: "clean", infectionStrain: null, yellowLocked: false, threatStrains: new Set() },
@@ -222,7 +213,37 @@
         let trucks = [];
         let sparks = [];
 
-        // --- ÖĞRETİCİ (TUTORIAL) SİSTEMİ ---
+        // --- ANA FONKSİYONLAR ---
+        function startGame() {
+            // Arayüz geçişi (Öncelikle garanti altına alınır)
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('uiLayer').classList.remove('hidden');
+            document.getElementById('uiLayer').classList.add('flex');
+            isPlaying = true;
+            
+            // Öğretici Başlangıç Enfeksiyonu
+            const ankara = nodes.find(n => n.id === 5);
+            if(ankara) infectNode(ankara, 'O');
+            updateTutorialUI();
+            
+            gameLoop();
+
+            // Tam ekranı en son ve güvenli şekilde dene (Hata verirse yoksay)
+            try {
+                let docElm = document.documentElement;
+                if (docElm.requestFullscreen) {
+                    let p = docElm.requestFullscreen();
+                    if (p && p.catch) p.catch(e => console.log("Tam ekran desteklenmiyor"));
+                }
+                else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
+                else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
+                else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
+            } catch(e) {
+                console.log("Tam ekran denemesi başarısız oldu.");
+            }
+        }
+
+        // --- ÖĞRETİCİ SİSTEMİ ---
         function updateTutorialUI() {
             const panel = document.getElementById('tutorialPanel');
             const title = document.getElementById('tutorialTitle');
@@ -260,7 +281,7 @@
                 updateTutorialUI();
             } else if (tutorialStep === 5) {
                 document.getElementById('tutorialPanel').classList.add('hidden');
-                tutorialMode = false; // Normal oyun başlar!
+                tutorialMode = false;
             }
         }
 
@@ -279,38 +300,11 @@
                 }
             }
             if (tutorialStep === 4 && totalTeams > 1) {
-                toggleMarket(true); // Kapat
+                toggleMarket(true);
                 tutorialStep = 5;
                 updateTutorialUI();
             }
         }
-
-        // --- ANA FONKSİYONLAR ---
-        function startGame() {
-            // 1. Önce ekranları değiştir (Tam ekran hatası verse bile UI takılmasın)
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('uiLayer').classList.remove('hidden');
-            document.getElementById('uiLayer').classList.add('flex');
-            isPlaying = true;
-            
-            // 2. Öğretici başlat
-            const ankara = nodes.find(n => n.id === 5);
-            if(ankara) infectNode(ankara, 'O');
-            updateTutorialUI();
-            
-            gameLoop();
-            
-            // 3. Tam ekranı en son ve korumalı şekilde dene
-            try {
-                let docElm = document.documentElement;
-                if (docElm.requestFullscreen) docElm.requestFullscreen().catch(e => console.log("Tam ekran desteklenmiyor"));
-                else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
-                else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
-                else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
-            } catch(e) {
-                console.log("Tam ekran hatası yoksayıldı.");
-            }
-                }
 
         function toggleMarket(forceClose = false) {
             const m = document.getElementById('marketModal');
@@ -352,4 +346,303 @@
             }
         }
 
-        function 
+        function buyAutoVaccine() {
+            if (!hasAutoVaccine && (budget >= 4000 || (budget < 4000 && budget - 4000 > -5000))) {
+                budget -= 4000;
+                hasAutoVaccine = true;
+                document.getElementById('buyAutoVacBtn').innerText = "AKTİF";
+                document.getElementById('buyAutoVacBtn').disabled = true;
+                document.getElementById('buyAutoVacBtn').classList.replace('bg-purple-600', 'bg-green-600');
+                
+                let opsBtn = document.getElementById('buyAutoOpsBtn');
+                opsBtn.disabled = false;
+                opsBtn.classList.replace('bg-gray-600', 'bg-red-600');
+                opsBtn.classList.add('hover:bg-red-700', 'text-white');
+                document.getElementById('autoOpsContainer').classList.remove('opacity-50');
+                updateUI();
+            }
+        }
+
+        function buyAutoOps() {
+            if (!hasAutoOps && hasAutoVaccine && (budget >= 12000 || (budget < 12000 && budget - 12000 > -5000))) {
+                budget -= 12000;
+                hasAutoOps = true;
+                document.getElementById('buyAutoOpsBtn').innerText = "AKTİF";
+                document.getElementById('buyAutoOpsBtn').disabled = true;
+                document.getElementById('buyAutoOpsBtn').classList.replace('bg-red-600', 'bg-green-600');
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            const b = document.getElementById('budgetDisplay');
+            b.innerText = `₺${Math.floor(budget)}`;
+            b.className = budget < 0 ? "text-2xl font-black text-red-500" : "text-2xl font-black text-emerald-400";
+            
+            document.getElementById('dayDisplay').innerText = Math.floor(day);
+            
+            Object.keys(vaccineStock).forEach(s => {
+                document.getElementById(`vac-${s}`).innerText = vaccineStock[s];
+            });
+
+            let tHTML = '';
+            for(let i=0; i<totalTeams; i++) {
+                tHTML += `<div class="w-3 h-3 rounded-full ${i < availableTeams ? 'bg-green-500' : 'bg-red-500'}"></div>`;
+            }
+            document.getElementById('teamsDisplay').innerHTML = tHTML;
+        }
+
+        // --- HASTALIK MEKANİKLERİ ---
+        function infectNode(node, strain) {
+            if (node.state === 'clean' || node.state === 'yellow') {
+                node.state = 'infected';
+                node.infectionStrain = strain;
+                createSparks(node.x * canvas.width, node.y * canvas.height, strains[strain].color);
+                
+                edges.forEach(edge => {
+                    let n1 = nodes[edge[0]], n2 = nodes[edge[1]];
+                    let neighbor = (n1.id === node.id) ? n2 : (n2.id === node.id) ? n1 : null;
+                    if (neighbor && neighbor.state === 'clean') {
+                        neighbor.yellowLocked = true;
+                        neighbor.threatStrains.add(strain);
+                    }
+                });
+            }
+        }
+
+        function cleanNode(node) {
+            if (node.state === 'infected') {
+                node.state = 'clean';
+                node.infectionStrain = null;
+            }
+            if (node.yellowLocked) {
+                node.yellowLocked = false;
+                node.threatStrains.clear();
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (!isPlaying || isGameOver || availableTeams <= 0) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            nodes.forEach(node => {
+                const nx = node.x * canvas.width;
+                const ny = node.y * canvas.height;
+                const dist = Math.hypot(mouseX - nx, mouseY - ny);
+
+                if (dist < 25) {
+                    if (node.state === 'infected' && vaccineStock[node.infectionStrain] > 0) {
+                        vaccineStock[node.infectionStrain]--;
+                        availableTeams--;
+                        sendTeam(node, 2000);
+                        updateUI();
+                    } 
+                    else if (node.yellowLocked) {
+                        let usedStrain = Array.from(node.threatStrains).find(s => vaccineStock[s] > 0);
+                        if (usedStrain) {
+                            vaccineStock[usedStrain]--;
+                            availableTeams--;
+                            sendTeam(node, 1500);
+                            updateUI();
+                        }
+                    }
+                }
+            });
+            checkTutorialProgress();
+        });
+
+        function sendTeam(node, duration) {
+            setTimeout(() => {
+                cleanNode(node);
+                availableTeams++;
+                budget += (node.state === 'infected' ? 300 : 100);
+                updateUI();
+                checkTutorialProgress();
+            }, duration);
+        }
+
+        // --- ÇİZİM VE ANİMASYON ---
+        function createSparks(x, y, color) {
+            for(let i=0; i<8; i++) {
+                sparks.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                    life: 1, color: color
+                });
+            }
+        }
+
+        function drawPaths() {
+            ctx.lineWidth = 1;
+            edges.forEach(edge => {
+                const n1 = nodes[edge[0]];
+                const n2 = nodes[edge[1]];
+                ctx.beginPath();
+                ctx.moveTo(n1.x * canvas.width, n1.y * canvas.height);
+                ctx.lineTo(n2.x * canvas.width, n2.y * canvas.height);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.stroke();
+            });
+        }
+
+        function spawnTruck() {
+            let edge = edges[Math.floor(Math.random() * edges.length)];
+            let startNode = nodes[edge[Math.random() > 0.5 ? 0 : 1]];
+            let endNode = nodes[edge[0] === startNode.id ? 1 : 0];
+            let carryStrain = startNode.state === 'infected' ? startNode.infectionStrain : null;
+
+            trucks.push({
+                x: startNode.x * canvas.width, y: startNode.y * canvas.height,
+                target: endNode, progress: 0,
+                speed: 0.005 + (Math.random() * 0.005),
+                startX: startNode.x * canvas.width, startY: startNode.y * canvas.height,
+                carryStrain: carryStrain
+            });
+        }
+
+        function drawNodesAndElements() {
+            let totalIncome = 0;
+
+            for (let i = trucks.length - 1; i >= 0; i--) {
+                let t = trucks[i];
+                t.progress += t.speed;
+                let tx = t.target.x * canvas.width;
+                let ty = t.target.y * canvas.height;
+                t.x = t.startX + (tx - t.startX) * t.progress;
+                t.y = t.startY + (ty - t.startY) * t.progress;
+
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
+                if (t.carryStrain) {
+                    ctx.fillStyle = strains[t.carryStrain].color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = ctx.fillStyle;
+                } else {
+                    ctx.fillStyle = "#94a3b8";
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fill();
+
+                if (t.progress >= 1) trucks.splice(i, 1);
+            }
+            ctx.shadowBlur = 0;
+
+            nodes.forEach(node => {
+                const nx = node.x * canvas.width;
+                const ny = node.y * canvas.height;
+
+                if (node.state === 'infected') totalIncome -= 30;
+                if (node.yellowLocked) totalIncome -= 10;
+                if (node.state === 'clean' && !node.yellowLocked) totalIncome += 5;
+
+                if (node.state === 'infected' || node.yellowLocked) {
+                    ctx.beginPath();
+                    ctx.arc(nx, ny, 20, 0, Math.PI * 2);
+                    ctx.strokeStyle = node.state === 'infected' ? "rgba(239, 68, 68, 0.5)" : "rgba(234, 179, 8, 0.5)";
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 10, 0, Math.PI * 2);
+                ctx.fillStyle = node.state === 'infected' ? strains[node.infectionStrain].color : "#0f766e";
+                ctx.fill();
+
+                ctx.fillStyle = "rgba(255,255,255,0.7)";
+                ctx.font = "10px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(node.name, nx, ny + 20);
+
+                if (node.yellowLocked && node.threatStrains.size > 0) {
+                    let ts = Array.from(node.threatStrains)[0];
+                    ctx.fillStyle = strains[ts].color;
+                    ctx.font = "bold 11px sans-serif";
+                    ctx.fillText(`Tehdit: Tip-${ts}`, nx, ny - 15);
+                }
+            });
+
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                let s = sparks[i];
+                s.x += s.vx; s.y += s.vy; s.life -= 0.05;
+                ctx.globalAlpha = Math.max(0, s.life);
+                ctx.fillStyle = s.color;
+                ctx.beginPath(); ctx.arc(s.x, s.y, 2, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1;
+                if (s.life <= 0) sparks.splice(i, 1);
+            }
+
+            document.getElementById('incomeDisplay').innerText = totalIncome > 0 ? `+${totalIncome}` : totalIncome;
+            budget += (totalIncome / 60);
+        }
+
+        // --- OYUN DÖNGÜSÜ ---
+        let frameCount = 0;
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaths();
+            drawNodesAndElements();
+
+            frameCount++;
+            
+            if (!tutorialMode) {
+                day += 1/60;
+
+                if (frameCount % 60 === 0) spawnTruck();
+
+                if (frameCount % 400 === 0) {
+                    let cleanNodes = nodes.filter(n => n.state === 'clean' && !n.yellowLocked);
+                    if (cleanNodes.length > 0) {
+                        let target = cleanNodes[Math.floor(Math.random() * cleanNodes.length)];
+                        let strainKeys = Object.keys(strains);
+                        infectNode(target, strainKeys[Math.floor(Math.random() * strainKeys.length)]);
+                    }
+                }
+
+                if (frameCount % 1800 === 0) {
+                    Object.keys(vaccineStock).forEach(s => {
+                        if (vaccineStock[s] > 10) vaccineStock[s]--;
+                    });
+                }
+
+                if (frameCount % 60 === 0) {
+                    if (hasAutoVaccine) {
+                        Object.keys(vaccineStock).forEach(s => {
+                            if (vaccineStock[s] < 5 && budget >= 100) produceVaccine(s);
+                        });
+                    }
+                    if (hasAutoOps && availableTeams > 0) {
+                        let target = nodes.find(n => n.state === 'infected' && vaccineStock[n.infectionStrain] > 0);
+                        if (!target) {
+                            target = nodes.find(n => n.yellowLocked && Array.from(n.threatStrains).some(ts => vaccineStock[ts] > 0));
+                        }
+                        if (target) {
+                            let reqStrain = target.state === 'infected' ? target.infectionStrain : Array.from(target.threatStrains).find(ts => vaccineStock[ts] > 0);
+                            vaccineStock[reqStrain]--;
+                            availableTeams--;
+                            sendTeam(target, 1500);
+                        }
+                    }
+                }
+            }
+
+            updateUI();
+
+            if (budget <= -5000) {
+                isGameOver = true;
+                isPlaying = false;
+                document.getElementById('endDay').innerText = Math.floor(day);
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+                document.getElementById('gameOverScreen').classList.add('flex');
+            } else {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+    </script>
+</body>
+</html>
