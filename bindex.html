@@ -69,7 +69,7 @@
         </div>
         
         <!-- Butonları Saran Flex Konteyner -->
-        <div class="flex flex-col items-center gap-4 mb-8 z-10 relative">
+        <div class="flex flex-col items-center gap-4 mb-8">
             <button id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl sm:text-2xl py-4 px-12 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-transform hover:scale-105 active:scale-95">
                 BAŞLA (TAM EKRAN)
             </button>
@@ -364,38 +364,67 @@
             } catch(e) { }
         }
 
-        function recalculateThreats() {
-            state.nodes.forEach(n => {
-                n.threatStrains.clear();
-                n.quarantinedBy.clear();
-            });
+        function updateUI() {
+            uiMoney.innerText = Math.floor(state.money); 
+            if (state.money < 0) { uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500'); } 
+            else { uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400'); }
+
+            uiDay.innerText = state.day;
+            uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
+            STRAIN_ORDER.forEach(s => { uiStocks[s].innerText = state.stock[s]; });
             
+            let income = 0, drain = 0;
             state.nodes.forEach(n => {
-                if (n.qState === 2) { 
-                    n.connectedNodes.forEach(neighbor => {
-                        n.infectedStrains.forEach(s => neighbor.threatStrains.add(s));
-                        neighbor.quarantinedBy.add(n.id);
-                    });
-                }
+                if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
             });
+            let net = income - drain;
+            uiNet.innerText = (net >= 0 ? "+" : "") + net;
+            uiNet.className = "text-xs sm:text-sm font-bold " + (net >= 0 ? "text-emerald-400" : "text-red-500");
             
+            if(state.maxTeams >= 6) { btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50'); } 
+            else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
+
+            if(state.autoProdLevel >= 2) { btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50'); } 
+            else if(state.autoProdLevel === 1) { btnBuyAutoProd.innerText = `₺12000`; }
+        }
+
+        // --- DİNAMİK TEHDİT GÜNCELLEMESİ (SADECE GEREKTİĞİNDE ÇALIŞIR, KASMAYI ÖNLER) ---
+        function cleanStaleThreats() {
+            let uiNeedsUpdate = false;
             state.nodes.forEach(n => {
+                let actualThreats = new Set();
+                let actualQuarantiners = new Set();
+                
+                n.connectedNodes.forEach(neighbor => {
+                    if (neighbor.qState === 2) {
+                        actualQuarantiners.add(neighbor.id);
+                        neighbor.infectedStrains.forEach(s => actualThreats.add(s));
+                    }
+                });
+                
+                n.threatStrains = actualThreats;
+                n.quarantinedBy = actualQuarantiners;
+                
                 if (n.qState === 1) {
                     let hasImmunityForAll = true;
                     Array.from(n.threatStrains).forEach(s => {
                         if (n.immunity[s] <= 0) hasImmunityForAll = false;
                     });
+                    n.yellowLocked = (!hasImmunityForAll) && (n.threatStrains.size > 0);
                     
-                    n.yellowLocked = !hasImmunityForAll && n.threatStrains.size > 0;
-                    
+                    // Eğer tehdit tamamen bittiyse (ve kendisi hasta değilse) sarı karantinayı kaldır
                     if (n.threatStrains.size === 0 && n.infectedStrains.length === 0) {
                         n.qState = 0;
                         n.yellowLocked = false;
+                        addFloatingText("Tedbir Kalktı", n.x, n.y+20, '#4ade80');
+                        uiNeedsUpdate = true;
                     }
                 }
             });
+            if (uiNeedsUpdate) updateUI();
         }
 
+        // --- ÖĞRETİCİ SİSTEMİ ---
         function updateTutorialUI() {
             const panel = document.getElementById('tutorial-panel'), title = document.getElementById('tutorial-title'), text = document.getElementById('tutorial-text'), btn = document.getElementById('tutorial-btn');
             if(!panel) return;
@@ -462,9 +491,8 @@
         btnUpgrades.onclick = () => { upgradeModal.classList.remove('hidden'); upgradeModal.classList.add('flex'); };
         btnCloseUpgrade.onclick = () => { upgradeModal.classList.add('hidden'); upgradeModal.classList.remove('flex'); };
 
-        const teamLimit = 6;
         btnBuyTeam.onclick = () => {
-            if(state.maxTeams < teamLimit && (state.money - state.teamCost) >= -5000) {
+            if(state.maxTeams < 6 && (state.money - state.teamCost) >= -5000) {
                 state.money -= state.teamCost; state.maxTeams++; state.teamsAvailable++;
                 state.teamCost = Math.floor(state.teamCost * 1.6);
                 addFloatingText("Yeni Ekip!", canvas.width/2, canvas.height/2, '#4ade80');
@@ -484,7 +512,7 @@
                     state.autoProdLimit = autoProdLimits[state.autoProdLevel];
                     state.autoProdLevel++;
                     
-                    if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 10.0; } 
+                    if (state.disasterPhase === 0) { state.disasterPhase = 1; state.disasterDelayTimer = 10.0; }
                     addFloatingText(`YZ Üretim Seviye ${state.autoProdLevel}!`, canvas.width/2, canvas.height/2, '#3b82f6');
                     updateUI();
                 }
@@ -494,7 +522,7 @@
         btnBuyAutoVac.onclick = () => {
             if(!state.autoVaccine && (state.money - 10000) >= -5000) {
                 state.money -= 10000; state.autoVaccine = true;
-                state.disasterPhase = 2; state.disasterTimer = 20.0 + Math.random() * 10.0; 
+                state.disasterPhase = 2; state.disasterTimer = 20.0 + Math.random() * 10.0;
                 btnBuyAutoVac.innerText = "AKTİF"; btnBuyAutoVac.disabled = true; btnBuyAutoVac.classList.add('opacity-50');
                 addFloatingText("YZ Filyasyon Aktif!", canvas.width/2, canvas.height/2, '#a855f7'); updateUI();
             }
@@ -527,7 +555,7 @@
             node.infectedStrains.push(strain);
             if (node.qState < 2 && node.qPendingState < 2) { node.qTimer = 1.5; node.qPendingState = 2; }
             addFloatingText("VAKA!", node.x, node.y - 30, STRAINS[strain].color);
-            recalculateThreats();
+            cleanStaleThreats(); // YENİ: Hastalık eklendiğinde tehditleri güvenle tazele
         }
 
         function triggerDisaster() {
@@ -545,30 +573,6 @@
 
         function addFloatingText(text, x, y, color) { state.particles.push({ type: 'text', text, x, y, color, life: 1.0, maxLife: 1.0, velY: -20 }); }
         function spawnExplosion(x, y, color) { for(let i=0; i<6; i++) state.particles.push({ type: 'spark', x, y, vx: (Math.random()-0.5)*80, vy: (Math.random()-0.5)*80, life: 0.4, maxLife: 0.4, color }); }
-
-        function updateUI() {
-            uiMoney.innerText = Math.floor(state.money); 
-            if (state.money < 0) { uiMoney.parentElement.classList.remove('text-emerald-400'); uiMoney.parentElement.classList.add('text-red-500'); } 
-            else { uiMoney.parentElement.classList.remove('text-red-500'); uiMoney.parentElement.classList.add('text-emerald-400'); }
-
-            uiDay.innerText = state.day;
-            uiTeams.innerText = state.teamsAvailable; uiMaxTeams.innerText = state.maxTeams;
-            STRAIN_ORDER.forEach(s => { uiStocks[s].innerText = state.stock[s]; });
-            
-            let income = 0, drain = 0;
-            state.nodes.forEach(n => {
-                if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
-            });
-            let net = income - drain;
-            uiNet.innerText = (net >= 0 ? "+" : "") + net;
-            uiNet.className = "text-xs sm:text-sm font-bold " + (net >= 0 ? "text-emerald-400" : "text-red-500");
-            
-            if(state.maxTeams >= teamLimit) { btnBuyTeam.innerText = "MAKS."; btnBuyTeam.disabled = true; btnBuyTeam.classList.add('opacity-50'); } 
-            else { btnBuyTeam.innerText = `₺${state.teamCost}`; }
-
-            if(state.autoProdLevel >= 2) { btnBuyAutoProd.innerText = "MAKS."; btnBuyAutoProd.disabled = true; btnBuyAutoProd.classList.add('opacity-50'); } 
-            else if(state.autoProdLevel === 1) { btnBuyAutoProd.innerText = `₺${autoProdCosts[1]}`; }
-        }
 
         function update(dt) {
             if(!gameStarted || state.isGameOver) return;
@@ -599,20 +603,20 @@
                 economyTimer += dt;
                 if (economyTimer >= 1.0) { 
                     let income = 0, drain = 0;
-                    let immunityChanged = false;
+                    let immunityLost = false; // YENİ: Koruma bittiğinde kilitleri tazele
                     state.nodes.forEach(n => {
                         if (n.qState === 2) drain += 20; else if (n.qState === 1) drain += 10; else if (n.infectedStrains.length === 0) income += 5;
                         STRAIN_ORDER.forEach(s => { 
                             if (n.immunity[s] > 0) { 
                                 n.immunity[s] -= 1; 
-                                if (n.immunity[s] <= 0) { addFloatingText(`Koruma Bitti (${s})`, n.x, n.y+30, '#94a3b8'); immunityChanged = true; } 
+                                if (n.immunity[s] <= 0) { addFloatingText(`Koruma Bitti (${s})`, n.x, n.y+30, '#94a3b8'); immunityLost = true; } 
                             } 
                         });
                     });
                     state.money += (income - drain); updateUI(); economyTimer = 0;
                     
-                    if(immunityChanged) recalculateThreats();
-
+                    if (immunityLost) cleanStaleThreats(); // YENİ: Performans dostu hesaplama
+                    
                     if(state.money <= -5000 && !state.isGameOver) { 
                         state.isGameOver = true; 
                         document.getElementById('game-over-day').innerText = `Dayanılan Gün: ${state.day}`;
@@ -689,7 +693,7 @@
 
             if (state.producingTimer > 0) {
                 state.producingTimer -= dt; 
-                produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%'; // Sadece progress bar güncellenir
+                produceBar.style.width = ((3.0 - state.producingTimer) / 3.0 * 100) + '%'; 
                 if (state.producingTimer <= 0) {
                     state.stock[state.producingStrain] += 3; state.producingTimer = -1;
                     produceBtns.forEach(b => b.disabled = false);
@@ -705,10 +709,23 @@
                     n.qTimer -= dt;
                     if (n.qTimer <= 0) {
                         n.qState = n.qPendingState; n.qPendingState = 0;
-                        if (n.qState === 2) { addFloatingText("MİHRAK", n.x, n.y, '#ef4444'); } 
-                        else if (n.qState === 1) { addFloatingText("TEDBİR", n.x, n.y+15, '#eab308'); }
-                        recalculateThreats();
+                        if (n.qState === 2) {
+                            addFloatingText("MİHRAK", n.x, n.y, '#ef4444');
+                            n.connectedNodes.forEach(neighbor => {
+                                n.infectedStrains.forEach(s => neighbor.threatStrains.add(s));
+                                if (neighbor.qState === 0 && neighbor.qPendingState === 0) {
+                                    neighbor.qTimer = 1.5; neighbor.qPendingState = 1; neighbor.quarantinedBy.add(n.id);
+                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                    if (!isImmune) neighbor.yellowLocked = true;
+                                } else if (neighbor.qState === 1 || neighbor.qPendingState === 1) {
+                                    neighbor.quarantinedBy.add(n.id);
+                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                    if (!isImmune) neighbor.yellowLocked = true;
+                                }
+                            });
+                        } else if (n.qState === 1) { addFloatingText("TEDBİR", n.x, n.y+15, '#eab308'); }
                         updateUI();
+                        cleanStaleThreats(); // YENİ: Kordon çekilir çekilmez güvence tespiti yap
                     }
                 }
 
@@ -720,12 +737,19 @@
                         n.infectedStrains = n.infectedStrains.filter(s => s !== vStrain);
                         n.immunity[vStrain] = 40.0; 
                         
+                        if (n.qState === 1) {
+                            let isFullyImmune = Array.from(n.threatStrains).every(s => n.immunity[s] > 0);
+                            if (isFullyImmune) n.yellowLocked = false;
+                        } else { n.yellowLocked = false; }
+                        
                         addFloatingText("Temizlendi", n.x, n.y-25, STRAINS[vStrain].color);
                         if (n.qState === 2 && n.infectedStrains.length === 0) {
+                            n.qState = 0; n.threatStrains.clear();
+                            n.connectedNodes.forEach(neighbor => neighbor.quarantinedBy.delete(n.id));
                             addFloatingText("Mihrak Çözüldü", n.x, n.y+20, '#4ade80');
                         }
-                        recalculateThreats();
                         updateUI();
+                        cleanStaleThreats(); // YENİ: Bir il temizlendiği an, saldığı hayalet tehditleri haritadan sil.
                         checkTutorialProgress(); 
                     }
                 }
