@@ -665,25 +665,33 @@
                 if (n.qTimer > 0) {
                     n.qTimer -= dt;
                     if (n.qTimer <= 0) {
-                        n.qState = n.qPendingState; n.qPendingState = 0;
-                        if (n.qState === 2) {
-                            addFloatingText("MİHRAK", n.x, n.y, '#ef4444');
-                            n.connectedNodes.forEach(neighbor => {
-                                n.infectedStrains.forEach(s => neighbor.threatStrains.add(s));
-                                if (neighbor.qState === 0 && neighbor.qPendingState === 0) {
-                                    neighbor.qTimer = 1.5; neighbor.qPendingState = 1; neighbor.quarantinedBy.add(n.id);
-                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
-                                    if (!isImmune) neighbor.yellowLocked = true;
-                                } else if (neighbor.qState === 1 || neighbor.qPendingState === 1) {
-                                    neighbor.quarantinedBy.add(n.id);
-                                    let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
-                                    if (!isImmune) neighbor.yellowLocked = true;
-                                }
-                            });
-                        } else if (n.qState === 1) { addFloatingText("TEDBİR", n.x, n.y+15, '#eab308'); }
-                        updateUI();
+                        // YENİ KONTROL: Eğer bekleyen durum Mihrak (2) ise ama hastalık çoktan iyileşmişse, kordonu iptal et!
+                        if (n.qPendingState === 2 && n.infectedStrains.length === 0) {
+                            n.qPendingState = 0;
+                        } else {
+                            n.qState = n.qPendingState; n.qPendingState = 0;
+                            if (n.qState === 2) {
+                                addFloatingText("MİHRAK", n.x, n.y, '#ef4444');
+                                n.connectedNodes.forEach(neighbor => {
+                                    n.infectedStrains.forEach(s => neighbor.threatStrains.add(s));
+                                    if (neighbor.qState === 0 && neighbor.qPendingState === 0) {
+                                        neighbor.qTimer = 1.5; neighbor.qPendingState = 1; neighbor.quarantinedBy.add(n.id);
+                                        let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                        if (!isImmune) neighbor.yellowLocked = true;
+                                    } else if (neighbor.qState === 1 || neighbor.qPendingState === 1) {
+                                        neighbor.quarantinedBy.add(n.id);
+                                        let isImmune = n.infectedStrains.every(s => neighbor.immunity[s] > 0);
+                                        if (!isImmune) neighbor.yellowLocked = true;
+                                    }
+                                });
+                            } else if (n.qState === 1) { 
+                                addFloatingText("TEDBİR", n.x, n.y+15, '#eab308'); 
+                            }
+                            updateUI();
+                        }
                     }
                 }
+
 
                 if (n.vaccinatingTimer > 0) {
                     n.vaccinatingTimer -= dt;
