@@ -398,7 +398,6 @@
         function checkTutorialProgress() {
             if (!tutorialMode) return;
             if (tutorialStep === 2 && state.stock['Tip-O'] > 5) { tutorialStep = 3; updateTutorialUI(); }
-            // 4. Adım Kontrolü (Tüm hastalıkların ve karantinaların temizlenip temizlenmediğini kontrol et)
             if (tutorialStep === 4 && !state.nodes.some(n => n.qState > 0 || n.infectedStrains.length > 0)) { 
                 tutorialStep = 5; updateTutorialUI(); 
             }
@@ -482,14 +481,6 @@
         }
 
         function applyVaccine(node, cx, cy, isAuto = false) {
-            // Güvenlik Kontrolü: Hastalık yoksa ve tehdit altında da değilse boş yere aşı harcatma
-            let needsVaccine = node.infectedStrains.includes(state.activeTool) || (node.qState === 1 && node.yellowLocked && Array.from(node.threatStrains).includes(state.activeTool));
-            
-            if (!needsVaccine) {
-                if(!isAuto) addFloatingText("Gereksiz!", cx, cy, '#64748b');
-                return;
-            }
-
             if (node.vaccinatingTimer > 0) { if(!isAuto) addFloatingText("Aşılanıyor!", cx, cy, '#94a3b8'); return; }
             if (state.stock[state.activeTool] <= 0) { if(!isAuto) addFloatingText("STOK YOK!", cx, cy, '#ef4444'); return; }
             if (state.teamsAvailable <= 0) { if(!isAuto) addFloatingText("EKİP YOK!", cx, cy, '#ef4444'); return; }
@@ -559,13 +550,11 @@
                 if (dayTimer >= 2.0) { 
                     state.day++; dayTimer = 0; updateUI(); 
 
-                    // 300. Gün Pasif Felaket Tetikleyicisi
                     if (state.day === 300 && state.disasterPhase === 0) {
                         state.disasterPhase = 1;
                         state.disasterDelayTimer = 10.0;
                     }
 
-                    // 500. Gün Zafer Koşulu
                     if (state.day >= 500 && !state.isGameOver) {
                         state.isGameOver = true;
                         document.getElementById('game-over-title').innerText = "ZAFER!";
@@ -587,7 +576,6 @@
                     });
                     state.money += (income - drain); updateUI(); economyTimer = 0;
                     
-                    // İflas Koşulu
                     if(state.money <= -5000 && !state.isGameOver) { 
                         state.isGameOver = true; 
                         document.getElementById('game-over-day').innerText = `Dayanılan Gün: ${state.day}`;
@@ -716,7 +704,6 @@
                             addFloatingText("Mihrak Çözüldü", n.x, n.y+20, '#4ade80');
                         }
                         updateUI();
-                        // Serbest moda geçerken güncelleme de buraya eklendi
                         checkTutorialProgress(); 
                     }
                 }
